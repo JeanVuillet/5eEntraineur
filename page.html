@@ -52,7 +52,7 @@
     }
     .subBar {
       height: 100%;
-      width: 33%;
+      width: 0%;
       background-color: #2196f3;
       transition: width 0.5s;
     }
@@ -110,17 +110,17 @@ const levels = [
       {q: "Quelle est la religion dominante dans l’Empire byzantin ?", a: "orthodoxe"},
     ],
     requiredPerQuestion: 3,
-    startScore: 1, // démarre à 1/3
+    startScore: 1,
     wrongPenalty: 2
   },
   {
     title: "Niveau 2 : les dates",
     placeholder: "Réponds par une date (ex : 800, 527-565)",
     questions: [
-      {q: "Fin de l’Empire romain d’Occident ?", validate: (t)=> onlyDigits(t)==="476"},
-      {q: "Couronnement de Charlemagne ?", validate: (t)=> onlyDigits(t)==="800"},
-      {q: "Fin de l’Empire byzantin (prise de Constantinople) ?", validate: (t)=> onlyDigits(t)==="1453"},
-      {q: "Règne de Justinien ? (indiquer les bornes)", validate: (t)=> containsBothYears(t,527,565)},
+      {q: "Fin de l’Empire romain d’Occident ?", validate: (t)=> onlyDigits(t)==="476", a: "476"},
+      {q: "Couronnement de Charlemagne ?", validate: (t)=> onlyDigits(t)==="800", a: "800"},
+      {q: "Fin de l’Empire byzantin (prise de Constantinople) ?", validate: (t)=> onlyDigits(t)==="1453", a: "1453"},
+      {q: "Règne de Justinien ? (indiquer les bornes)", validate: (t)=> containsBothYears(t,527,565), a: "527-565"},
     ],
     requiredPerQuestion: 3,
     startScore: 1,
@@ -134,18 +134,27 @@ const levels = [
 let currentLevel = 0;
 let localScores = [];
 let general = 0;
-let currentIndex = 0;
+let currentIndex = -1;
 
 // ——————————————
 // UTILS
 // ——————————————
-function onlyDigits(str) { return (str||"").replace(/\\D/g, ""); }
+function onlyDigits(str) { return (str||"").replace(/\D/g, ""); }
 function containsBothYears(input,a,b){
   const t = (input||"").toLowerCase().replace(/[^0-9–-]/g, "");
   const digits = t.replace(/[–-]/g,"-");
   return digits.includes(""+a) && digits.includes(""+b);
 }
 function normalise(txt){ return (txt||"").trim().toLowerCase(); }
+
+function findNextIndex(fromIdx) {
+  const lvl = levels[currentLevel];
+  const req = lvl.requiredPerQuestion;
+  const n = lvl.questions.length;
+  for (let i = fromIdx + 1; i < n; i++) if (localScores[i] < req) return i;
+  for (let i = 0; i <= fromIdx; i++) if (localScores[i] < req) return i;
+  return null;
+}
 
 // ——————————————
 // RENDU UI
@@ -162,11 +171,10 @@ function setupLevel(levelIdx){
   levelTitle.textContent = lvl.title;
   inputElt.placeholder = lvl.placeholder;
 
-  // reset counters
   localScores = new Array(lvl.questions.length).fill(lvl.startScore);
   general = 0;
+  currentIndex = -1;
 
-  // rebuild sub bars
   subBarsContainer.innerHTML = "";
   lvl.questions.forEach((q, i) => {
     const barContainer = document.createElement("div");
@@ -174,7 +182,6 @@ function setupLevel(levelIdx){
     const bar = document.createElement("div");
     bar.classList.add("subBar");
     bar.id = "subBar" + i;
-    bar.style.width = "33%";
     const label = document.createElement("div");
     label.classList.add("subLabel");
     label.textContent = i + 1;
@@ -203,7 +210,7 @@ function nextQuestion() {
   const lvl = levels[currentLevel];
   if (general >= lvl.questions.length) {
     if (currentLevel < levels.length - 1) {
-      qElt.textContent = "🎉 Bravo ! Niveau 1 terminé ! Passage au niveau 2…";
+      qElt.textContent = "🎉 Bravo ! Niveau " + (currentLevel + 1) + " terminé ! Passage au niveau suivant…";
       document.getElementById("feedback").textContent = "";
       document.getElementById("submit").disabled = true;
       setTimeout(()=>{
@@ -218,8 +225,11 @@ function nextQuestion() {
       return;
     }
   }
-  const available = lvl.questions.map((_, i) => i).filter(i => localScores[i] < lvl.requiredPerQuestion);
-  currentIndex = available[0];
+
+  const nxt = findNextIndex(currentIndex);
+  if (nxt === null) return;
+  currentIndex = nxt;
+
   qElt.textContent = lvl.questions[currentIndex].q;
   document.getElementById("feedback").textContent = "";
   document.getElementById("answer").value = "";
@@ -235,7 +245,6 @@ document.getElementById("submit").addEventListener("click", () => {
 
   const lvl = levels[currentLevel];
   let isCorrect = false;
-
   const q = lvl.questions[currentIndex];
   if (q.validate) {
     isCorrect = q.validate(inputRaw);
@@ -252,12 +261,15 @@ document.getElementById("submit").addEventListener("click", () => {
       general++;
       document.getElementById("feedback").textContent += " Question validée 🎯";
     }
+    updateBars();
+    setTimeout(nextQuestion, 1200);
   } else {
     localScores[currentIndex] = Math.max(localScores[currentIndex] - lvl.wrongPenalty, 0);
-    document.getElementById("feedback").textContent = "❌ Mauvaise réponse.";
+    const correction = q.a ? `La bonne réponse était : "${q.a}".` : "";
+    document.getElementById("feedback").textContent = `❌ Mauvaise réponse. ${correction}`;
+    updateBars();
+    setTimeout(nextQuestion, 3000); // attendre 3 secondes avant question suivante
   }
-  updateBars();
-  setTimeout(nextQuestion, 1200);
 });
 
 setupLevel(0);
