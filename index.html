@@ -1,205 +1,246 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Quiz – Les deux empires</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    :root{
+      --arena-h: clamp(180px, 36vh, 320px);
+      --char-h: clamp(90px, 26vh, 200px);
+      --proj-size: clamp(18px, 3vh, 28px);
+    }
+    * { box-sizing: border-box; }
     body {
-      font-family: "Segoe UI", sans-serif;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
       background: linear-gradient(#e0f2fe, #f8fafc);
       color: #222;
-      max-width: 860px;
-      margin: 40px auto;
-      padding: 25px;
-      border-radius: 15px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
-      position: relative;
+      margin: 0;
+      padding: clamp(10px, 3vw, 24px);
+    }
+    .wrap {
+      margin: 0 auto;
+      max-width: 960px;
+      background: #fff8;
+      backdrop-filter: blur(4px);
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.08);
+      padding: clamp(12px, 3vw, 24px);
       overflow: hidden;
     }
-    h1, h2 { text-align: center; margin: 5px 0 10px; }
-    h2 { color: #374151; }
+    h1, h2 { text-align: center; margin: 4px 0 10px; }
+    h2 { color: #374151; font-size: clamp(16px, 2.8vw, 22px); }
 
-    #mainProgress {
-      background-color: #e5e7eb;
-      border-radius: 14px;
-      overflow: hidden;
-      height: 26px;
-      margin-bottom: 10px;
-      box-shadow: inset 0 0 4px rgba(0,0,0,0.12);
+    #lives { display:flex; justify-content:center; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
+    .heart {
+      width: clamp(18px, 3.6vw, 28px); height: clamp(18px, 3.6vw, 28px);
+      background: radial-gradient(circle at 30% 30%, #ef4444, #b91c1c);
+      clip-path: path("M16 28C8 22 2 18 2 11C2 7 5 4 9 4C12 4 14 6 16 8C18 6 20 4 23 4C27 4 30 7 30 11C30 18 24 22 16 28Z");
+      filter: drop-shadow(0 1px 1px rgba(0,0,0,.25));
     }
-    #mainBar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg,#22c55e,#16a34a);
-      transition: width 0.4s ease;
-    }
+    .heart.off { opacity:.25; filter: grayscale(.7); }
 
-    #subBars { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; margin-bottom: 12px; }
-    .subProgress { background-color: #e5e7eb; border-radius: 10px; height: 18px; overflow: hidden; position: relative; }
-    .subBar { height: 100%; width: 0%; background: linear-gradient(90deg,#60a5fa,#2563eb); transition: width 0.4s ease; }
-    .subLabel { position: absolute; top: 0; left: 8px; font-size: 0.85em; color: #fff; text-shadow: 0 0 3px rgba(0,0,0,0.5); line-height: 18px; font-weight: 600; }
+    #mainProgress { background:#e5e7eb; border-radius:14px; overflow:hidden; height:20px; margin-bottom:8px; }
+    #mainBar { height:100%; width:0%; background: linear-gradient(90deg,#22c55e,#16a34a); transition:width .4s ease; }
+    #subBars { display:grid; grid-template-columns: 1fr 1fr; gap:8px 16px; margin-bottom:8px; }
+    .subProgress { background:#e5e7eb; border-radius:10px; height:14px; overflow:hidden; position:relative; }
+    .subBar { height:100%; width:0%; background: linear-gradient(90deg,#60a5fa,#2563eb); transition:width .4s ease; }
+    .subLabel { position:absolute; top:0; left:6px; font-size:12px; color:#fff; text-shadow:0 0 2px rgba(0,0,0,.5); line-height:14px; font-weight:600; }
 
-    #question { font-size: 1.2em; margin: 18px 0 8px; text-align: center; }
-    #feedback { margin-top: 10px; font-weight: 700; text-align: center; }
-    #choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px auto; max-width: 600px; }
+    #question { font-size: clamp(16px, 3.5vw, 20px); margin: 12px 0 6px; text-align:center; }
+    #feedback { margin: 8px auto 0; text-align:center; min-height: 1.6em; font-weight: 700; }
+
+    #choices { display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin:8px auto; max-width:680px; }
     .choice {
-      border: 1px solid #d1d5db; border-radius: 10px; padding: 10px; cursor: pointer;
-      background: #fff; text-align: center; transition: transform .1s, box-shadow .2s;
+      border:1px solid #d1d5db; border-radius:10px; padding:clamp(8px,2vw,12px); cursor:pointer;
+      background:#fff; text-align:center; transition: transform .08s, box-shadow .2s; font-size: clamp(14px, 2.8vw, 16px);
     }
-    .choice:hover { box-shadow: 0 5px 10px rgba(0,0,0,0.08); transform: translateY(-2px); }
-    .choice.correct { background: #dcfce7; border-color: #22c55e; }
-    .choice.wrong { background: #fee2e2; border-color: #ef4444; }
+    .choice:hover { box-shadow:0 5px 10px rgba(0,0,0,0.08); transform:translateY(-2px); }
+    .choice.correct { background:#dcfce7; border-color:#22c55e; }
+    .choice.wrong { background:#fee2e2; border-color:#ef4444; }
 
-    #freeInputZone { display: none; text-align: center; margin-top: 10px; }
-    #answer { padding: 8px; width: 70%; font-size: 1em; }
-    #submit { margin-top: 10px; padding: 10px 14px; background: #22c55e; color: white; border: none; border-radius: 8px; cursor: pointer; }
-    #submit:hover { background: #16a34a; }
+    #freeInputZone { display:none; text-align:center; margin-top:8px; }
+    #answer { padding:8px; width:min(680px,90%); font-size:clamp(14px, 2.8vw, 16px); }
+    #submit { margin-top:8px; padding:10px 14px; background:#22c55e; color:#fff; border:0; border-radius:8px; cursor:pointer; }
+    #submit:hover { background:#16a34a; }
 
-    /* === ARENE === */
     #arena {
-      position: relative;
-      height: 240px;
-      margin-top: 30px;
+      position:relative; height:var(--arena-h); margin-top:10px;
       background: linear-gradient(#f0f9ff, #e0f2fe);
-      border-radius: 12px;
-      overflow: hidden;
+      border-radius:12px; overflow:hidden; box-shadow: inset 0 -6px 0 #cbd5e1;
     }
     #hero, #zombie, #projectile {
-      position: absolute;
-      bottom: 0;
-      height: 180px;
-      image-rendering: pixelated;
+      position:absolute; bottom:0; height:var(--char-h);
+      max-width:32vw; object-fit:contain; user-select:none; pointer-events:none;
     }
-    #hero { left: 20px; }
-    #zombie { right: 20px; transition: right 0.1s linear; }
+    #hero { left:min(3vw,24px); }
+    #zombie { right:min(3vw,24px); transition:right .08s linear; }
     #projectile {
-      width: 40px;
-      height: 40px;
+      width:var(--proj-size); height:var(--proj-size);
       background: radial-gradient(circle, #38bdf8 0%, #0284c7 80%);
-      border-radius: 50%;
-      display: none;
+      border-radius:50%; display:none;
     }
+
+    #overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:50; color:#fff; text-align:center; padding:20px; }
+    #overlay .panel{ background:#0f172a; border-radius:16px; padding:20px; width:min(520px,92%); box-shadow:0 20px 60px rgba(0,0,0,.4); }
+    #overlay h3{ margin:0 0 8px; font-size:clamp(18px, 4.6vw, 26px); }
+    #overlay button{ margin-top:8px; padding:10px 16px; border:0; border-radius:10px; cursor:pointer; background:#22c55e; color:#fff; }
   </style>
 </head>
 <body>
+<div class="wrap">
+  <h1>Les deux empires 🏰</h1>
+  <h2 id="levelTitle">Niveau 1 : repères</h2>
 
-<h1>Les deux empires 🏰</h1>
-<h2 id="levelTitle">Niveau 1 : repères</h2>
+  <div id="lives"></div>
 
-<div id="mainProgress"><div id="mainBar"></div></div>
-<p id="general" class="muted" style="text-align:center;">Compteur général : 0/0</p>
+  <div id="mainProgress"><div id="mainBar"></div></div>
+  <p id="general" style="text-align:center; margin:4px 0 8px;">Compteur général : 0/0</p>
+  <div id="subBars"></div>
 
-<div id="subBars"></div>
-<p id="question"></p>
+  <p id="question"></p>
+  <div id="choices"></div>
+  <div id="freeInputZone">
+    <input type="text" id="answer" placeholder="Écris ta réponse ici" />
+    <br />
+    <button id="submit">Valider</button>
+  </div>
+  <p id="feedback"></p>
 
-<div id="choices"></div>
-
-<div id="freeInputZone">
-  <input type="text" id="answer" placeholder="Écris ta réponse ici">
-  <br>
-  <button id="submit">Valider</button>
+  <div id="arena">
+    <img id="hero" src="img/hero.png" alt="Héros" />
+    <img id="zombie" src="img/zombi.png" alt="Zombie" />
+    <div id="projectile"></div>
+  </div>
 </div>
 
-<p id="feedback"></p>
-
-<!-- Zone arène -->
-<div id="arena">
-  <img id="hero" src="img/hero.png" alt="Héros">
-  <img id="zombie" src="img/zombi.png" alt="Zombie">
-  <div id="projectile"></div>
+<div id="overlay">
+  <div class="panel">
+    <h3>💀 Game Over</h3>
+    <p>Tu n’as plus de cœurs. Recommencer le niveau ?</p>
+    <button id="restartBtn">Recommencer</button>
+  </div>
 </div>
 
 <script>
-const levels = [
-  {
-    title: "Niveau 1 : repères",
-    placeholder: "Écris la réponse (dernier palier)",
-    requiredPerQuestion: 3,
-    startScore: 0,
-    wrongPenaltyInput: 1,
-    questions: [
-      { q: "Quel empire se trouve à l’Ouest de l’Europe au début du Moyen Âge ?", a: "carolingien", options: ["carolingien","byzantin","ottoman","romain d'orient"] },
-      { q: "Quel empire se trouve à l’Est de l’Europe, centré sur Constantinople ?", a: "byzantin", options: ["byzantin","carolingien","ottoman","sassanide"] },
-      { q: "Quelle est la capitale de l’Empire carolingien ?", a: "Aix-la-Chapelle", acceptable: ["aix la chapelle","aix-la-chapelle","aix la Chapelle"], options: ["Aix-la-Chapelle","Aixe-la-chapelle","Rome","Constantinople"] },
-      { q: "Quelle est la capitale de l’Empire byzantin ?", a: "Constantinople", options: ["Constantinople","Aix-la-chapelle","Aix-en-provence","Rome"] },
-      { q: "Religion dominante dans l’Empire carolingien ?", a: "catholique", options: ["catholique","orthodoxe","islam","arianisme"] },
-      { q: "Religion dominante dans l’Empire byzantin ?", a: "orthodoxe", options: ["orthodoxe","catholique","islam","arianisme"] }
-    ]
+/* ===== Données ===== */
+const levels=[{
+  title:"Niveau 1 : repères",
+  placeholder:"Écris la réponse (dernier palier)",
+  requiredPerQuestion:3, startScore:0, wrongPenaltyInput:1,
+  questions:[
+    { q:"Quel empire se trouve à l’Ouest de l’Europe au début du Moyen Âge ?", a:"carolingien", options:["carolingien","byzantin","ottoman","romain d'orient"] },
+    { q:"Quel empire se trouve à l’Est de l’Europe, centré sur Constantinople ?", a:"byzantin", options:["byzantin","carolingien","ottoman","sassanide"] },
+    { q:"Quelle est la capitale de l’Empire carolingien ?", a:"Aix-la-Chapelle", acceptable:["aix la chapelle","aix-la-chapelle","aix la Chapelle"], options:["Aix-la-Chapelle","Aixe-la-chapelle","Rome","Constantinople"] },
+    { q:"Quelle est la capitale de l’Empire byzantin ?", a:"Constantinople", options:["Constantinople","Aix-la-chapelle","Aix-en-provence","Rome"] },
+    { q:"Religion dominante dans l’Empire carolingien ?", a:"catholique", options:["catholique","orthodoxe","islam","arianisme"] },
+    { q:"Religion dominante dans l’Empire byzantin ?", a:"orthodoxe", options:["orthodoxe","catholique","islam","arianisme"] }
+  ]
+}];
+
+/* ===== État ===== */
+let currentLevel=0, localScores=[], general=0, currentIndex=-1;
+let locked=false, zombieInterval=null, zombiePosition=20, projectileInterval=null, zombiePaused=false;
+let lives=4; const MAX_LIVES=4;
+let zombieSpeed = 0.75; // 🐢 vitesse un peu réduite
+
+/* ===== Refs ===== */
+const levelTitle=document.getElementById("levelTitle");
+const livesWrap=document.getElementById("lives");
+const mainBar=document.getElementById("mainBar");
+const subBarsContainer=document.getElementById("subBars");
+const generalText=document.getElementById("general");
+const qElt=document.getElementById("question");
+const feedback=document.getElementById("feedback");
+const choicesZone=document.getElementById("choices");
+const freeInputZone=document.getElementById("freeInputZone");
+const inputElt=document.getElementById("answer");
+const submitBtn=document.getElementById("submit");
+const arena=document.getElementById("arena");
+const zombieElt=document.getElementById("zombie");
+const heroElt=document.getElementById("hero");
+const projectileElt=document.getElementById("projectile");
+const overlay=document.getElementById("overlay");
+const restartBtn=document.getElementById("restartBtn");
+
+/* ===== UI vies ===== */
+function renderLives(){
+  livesWrap.innerHTML="";
+  for(let i=0;i<MAX_LIVES;i++){
+    const h=document.createElement("div");
+    h.className="heart"+(i<lives?"":" off");
+    livesWrap.appendChild(h);
   }
-];
+}
 
-let currentLevel = 0;
-let localScores = [];
-let general = 0;
-let currentIndex = -1;
-let locked = false;
-let zombieInterval = null;
-let zombiePosition = 20; // en pixels depuis la droite
-let projectileInterval = null;
+/* ===== Setup niveau ===== */
+function setupLevel(idx){
+  const lvl=levels[idx];
+  levelTitle.textContent=lvl.title;
+  inputElt.placeholder=lvl.placeholder;
 
-const mainBar = document.getElementById("mainBar");
-const subBarsContainer = document.getElementById("subBars");
-const generalText = document.getElementById("general");
-const qElt = document.getElementById("question");
-const feedback = document.getElementById("feedback");
-const choicesZone = document.getElementById("choices");
-const freeInputZone = document.getElementById("freeInputZone");
-const inputElt = document.getElementById("answer");
-const submitBtn = document.getElementById("submit");
-const zombieElt = document.getElementById("zombie");
-const projectileElt = document.getElementById("projectile");
+  localScores=new Array(lvl.questions.length).fill(lvl.startScore);
+  general=0; currentIndex=-1;
 
-function setupLevel(idx) {
-  const lvl = levels[idx];
-  localScores = new Array(lvl.questions.length).fill(lvl.startScore);
-  general = 0; currentIndex = -1;
-  subBarsContainer.innerHTML = "";
+  lives=MAX_LIVES; renderLives();
+
+  subBarsContainer.innerHTML="";
   lvl.questions.forEach((_,i)=>{
     const bar=document.createElement("div");
     bar.className="subProgress";
     bar.innerHTML=`<div class="subBar" id="subBar${i}"></div><div class="subLabel">${i+1}</div>`;
     subBarsContainer.appendChild(bar);
   });
+
   updateBars();
-  nextQuestion();
+  nextQuestion(false); // reset normal au début
 }
 
 function updateBars(){
-  const lvl=levels[currentLevel];
-  const total=lvl.questions.length;
+  const total=levels[currentLevel].questions.length;
   mainBar.style.width=(general/total)*100+"%";
   generalText.textContent=`Compteur général : ${general}/${total}`;
-  const req=lvl.requiredPerQuestion;
-  lvl.questions.forEach((_,i)=>{
+  const req=levels[currentLevel].requiredPerQuestion;
+  levels[currentLevel].questions.forEach((_,i)=>{
     const bar=document.getElementById("subBar"+i);
     const val=Math.max(0,Math.min(localScores[i],req));
     bar.style.width=(val/req)*100+"%";
   });
 }
 
-function nextQuestion(){
-  clearInterval(zombieInterval);
-  zombiePosition = 20;
-  zombieElt.style.right = zombiePosition + "px";
-  zombieElt.style.display = "block";
+/* ===== Questions ===== */
+/** keepZombie=false -> reset au bord droit
+ *  keepZombie=true  -> NE PAS reset, repartir de la position actuelle */
+function nextQuestion(keepZombie){
+  if(!keepZombie){
+    stopZombie();
+    zombiePosition=20;
+    zombieElt.style.right=zombiePosition+"px";
+    zombieElt.style.display="block";
+  }else{
+    // on garde la position et l'affichage actuels
+    stopZombie(); // était en pause, on relancera après le rendu
+  }
+
+  zombiePaused=false;
   locked=false;
+  feedback.textContent="";
+
   const lvl=levels[currentLevel];
-  if (general>=lvl.questions.length){
+  if(general>=lvl.questions.length){
     qElt.textContent="🎉 Bravo ! Niveau terminé !";
     choicesZone.innerHTML=""; freeInputZone.style.display="none";
-    feedback.textContent="";
     return;
   }
+
   const nxt=findNextIndex(currentIndex);
   currentIndex=nxt;
   renderQuestion();
-  startZombie();
+  startZombie(); // repart soit du bord, soit de la position courante
 }
 
 function findNextIndex(fromIdx){
-  const lvl=levels[currentLevel];
-  const req=lvl.requiredPerQuestion;
-  const n=lvl.questions.length;
+  const lvl=levels[currentLevel], req=lvl.requiredPerQuestion, n=lvl.questions.length;
   for(let i=fromIdx+1;i<n;i++) if(localScores[i]<req) return i;
   for(let i=0;i<=fromIdx;i++) if(localScores[i]<req) return i;
   return null;
@@ -209,120 +250,166 @@ function renderQuestion(){
   const lvl=levels[currentLevel];
   const q=lvl.questions[currentIndex];
   const progress=localScores[currentIndex];
+
   qElt.textContent=q.q;
-  feedback.textContent="";
   inputElt.value="";
+  choicesZone.innerHTML="";
+  freeInputZone.style.display="none";
+
   if(progress>=lvl.requiredPerQuestion-1){
-    choicesZone.innerHTML="";
     freeInputZone.style.display="block";
-  } else {
-    freeInputZone.style.display="none";
-    renderChoices(q);
+    inputElt.focus();
+  }else{
+    const shuffled=[...q.options].sort(()=>Math.random()-0.5);
+    shuffled.forEach(opt=>{
+      const c=document.createElement("div");
+      c.className="choice";
+      c.textContent=opt;
+      c.addEventListener("click",()=>onChoiceClick(c,opt,q));
+      choicesZone.appendChild(c);
+    });
   }
 }
 
-function renderChoices(q){
-  const shuffled=[...q.options].sort(()=>Math.random()-0.5);
-  choicesZone.innerHTML="";
-  shuffled.forEach(opt=>{
-    const c=document.createElement("div");
-    c.className="choice";
-    c.textContent=opt;
-    c.addEventListener("click",()=>onChoiceClick(c,opt,q));
-    choicesZone.appendChild(c);
-  });
-}
-
-function normalize(txt){return (txt||"").toLowerCase().trim();}
-function isCorrectFreeInput(q,txt){
-  txt=normalize(txt);
-  if(q.acceptable) return q.acceptable.some(v=>txt===normalize(v));
-  return txt.includes(normalize(q.a));
-}
+/* ===== Vérifs ===== */
+function normalize(s){return (s||"").toLowerCase().trim();}
 function isCorrectOption(opt,q){return normalize(opt)===normalize(q.a);}
+function isCorrectFreeInput(q,s){
+  s=normalize(s);
+  if(q.acceptable) return q.acceptable.some(v=>normalize(v)===s);
+  return s.includes(normalize(q.a));
+}
 
+/* ===== Réponses ===== */
 function onChoiceClick(elt,opt,q){
-  if(locked)return;
+  if(locked) return;
   const ok=isCorrectOption(opt,q);
   locked=true;
+
   if(ok){
     elt.classList.add("correct");
     feedback.textContent="✅ Bonne réponse !";
     attack();
     incrementProgress(1);
-    setTimeout(nextQuestion,1200);
-  } else {
+    setTimeout(()=>nextQuestion(false),900); // bonne réponse -> nouveau zombie
+  }else{
     elt.classList.add("wrong");
-    feedback.textContent=`❌ Mauvaise réponse. Bonne réponse : ${q.a}`;
-    setTimeout(nextQuestion,2500);
+    wrongAnswerFlow(q);
   }
 }
 
 submitBtn.addEventListener("click",()=>{
-  if(locked)return;
+  if(locked) return;
   const q=levels[currentLevel].questions[currentIndex];
   const ok=isCorrectFreeInput(q,inputElt.value);
   locked=true;
+
   if(ok){
     feedback.textContent="✅ Bonne réponse !";
     attack();
     incrementProgress(1,true);
-    setTimeout(nextQuestion,1200);
-  } else {
-    localScores[currentIndex]=Math.max(0,localScores[currentIndex]-1);
-    feedback.textContent=`❌ Mauvaise réponse. Bonne réponse : ${q.a}`;
+    setTimeout(()=>nextQuestion(false),900);
+  }else{
+    localScores[currentIndex]=Math.max(0,localScores[currentIndex]-levels[currentLevel].wrongPenaltyInput);
     updateBars();
-    setTimeout(nextQuestion,2500);
+    wrongAnswerFlow(q);
   }
 });
+
+/* === Flux “mauvaise réponse” : pause, affiche, nouvelle question, reprise à la même position === */
+function wrongAnswerFlow(q){
+  stopZombie(); // pause instantanée
+  if(freeInputZone.style.display==="none"){
+    localScores[currentIndex]=Math.max(0,localScores[currentIndex]-1);
+    updateBars();
+  }
+  feedback.textContent=`❌ Mauvaise réponse. Bonne réponse : ${q.a}`;
+  setTimeout(()=>{ nextQuestion(true); }, 1500); // 👉 garde la position du zombie
+}
 
 function incrementProgress(v,final=false){
   const req=levels[currentLevel].requiredPerQuestion;
   localScores[currentIndex]=Math.min(req,localScores[currentIndex]+v);
-  if(final||localScores[currentIndex]===req)general++;
+  if(final||localScores[currentIndex]===req) general++;
   updateBars();
 }
 
-/* === ZOMBIE & HERO ANIMATION === */
+/* ===== Zombie ===== */
 function startZombie(){
-  clearInterval(zombieInterval);
+  stopZombie();
   zombieInterval=setInterval(()=>{
-    zombiePosition+=0.7; // 🧟 vitesse ralentie ÷3
+    if(zombiePaused) return;
+    zombiePosition+=zombieSpeed; // 🐢 vitesse réduite
     zombieElt.style.right=zombiePosition+"px";
-    if(zombiePosition>600){
-      clearInterval(zombieInterval);
-      feedback.textContent="💀 Le zombie t’a attrapé ! Question suivante...";
-      setTimeout(nextQuestion,2000);
-    }
+
+    const z=zombieElt.getBoundingClientRect();
+    const h=heroElt.getBoundingClientRect();
+    if(z.left<=h.right-6){ onZombieHitHero(); }
   },50);
 }
+function stopZombie(){ clearInterval(zombieInterval); zombieInterval=null; }
+function pauseZombie(flag){ zombiePaused=!!flag; }
 
+/* Collision zombie-héros : -1 vie, respawn au bord (même question) */
+function onZombieHitHero(){
+  stopZombie();
+  if(lives>0) lives--;
+  renderLives();
+  zombieElt.style.display="none";
+  feedback.textContent="💥 Le zombie t’a touché ! (-1 cœur)";
+
+  if(lives<=0){ gameOver(); return; }
+
+  setTimeout(()=>{
+    zombiePosition=20;
+    zombieElt.style.right=zombiePosition+"px";
+    zombieElt.style.display="block";
+    startZombie();
+  },900);
+}
+
+/* ===== Tir héros ===== */
 function attack(){
   const proj=projectileElt;
   proj.style.display="block";
-  proj.style.left="100px";
-  proj.style.bottom="100px";
-  let pos=100;
+  const a=arena.getBoundingClientRect();
+  const h=heroElt.getBoundingClientRect();
+  proj.style.left=(h.right-a.left+8)+"px";
+  proj.style.bottom="calc(var(--char-h) * 0.55)";
+
+  let vx=Math.max(12, arena.clientWidth/45);
   clearInterval(projectileInterval);
   projectileInterval=setInterval(()=>{
-    pos+=25;
-    proj.style.left=pos+"px";
-    const projRect = proj.getBoundingClientRect();
-    const zombRect = zombieElt.getBoundingClientRect();
-    if (projRect.right >= zombRect.left + 10) {
-      // 💥 collision détectée
+    const x=(parseFloat(proj.style.left)||0)+vx;
+    proj.style.left=x+"px";
+
+    const pR=proj.getBoundingClientRect();
+    const zR=zombieElt.getBoundingClientRect();
+    if(pR.right>=zR.left){
       clearInterval(projectileInterval);
       proj.style.display="none";
       zombieElt.style.display="none";
-      setTimeout(()=>{zombieElt.style.display="block"; zombiePosition=20; zombieElt.style.right="20px";},600);
+      stopZombie();
+      setTimeout(()=>{
+        zombiePosition=20;
+        zombieElt.style.right=zombiePosition+"px";
+        zombieElt.style.display="block";
+      },400);
     }
-    if(pos>700){
+    if(x>a.width-10){
       clearInterval(projectileInterval);
       proj.style.display="none";
     }
-  },50);
+  },16);
 }
 
+/* ===== Game over ===== */
+function gameOver(){ locked=true; stopZombie(); overlay.style.display="flex"; }
+document.getElementById("restartBtn").addEventListener("click",()=>{
+  overlay.style.display="none"; setupLevel(currentLevel);
+});
+
+/* Lancement */
 setupLevel(0);
 </script>
 </body>
