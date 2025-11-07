@@ -5,147 +5,252 @@
   <title>Quiz – Les deux empires</title>
   <style>
     body {
-      font-family: "Segoe UI", sans-serif;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
       background: #f8fafc;
       color: #222;
-      max-width: 750px;
+      max-width: 820px;
       margin: 50px auto;
       padding: 25px;
       border-radius: 15px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      box-shadow: 0 0 20px rgba(0,0,0,0.08);
     }
-    h1 {
-      text-align: center;
-      color: #2c3e50;
-      margin-bottom: 8px;
-    }
-    h2 { text-align:center; margin-top: 0; color:#34495e; font-weight: 500; }
+    h1 { text-align: center; color: #2c3e50; margin-bottom: 6px; }
+    h2 { text-align:center; margin: 0 0 12px; color:#34495e; font-weight: 600; }
 
     #mainProgress {
-      background-color: #e0e0e0;
-      border-radius: 15px;
+      background-color: #e5e7eb;
+      border-radius: 14px;
       overflow: hidden;
-      height: 30px;
-      margin-bottom: 20px;
-      box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+      height: 26px;
+      margin-bottom: 10px;
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.12);
     }
     #mainBar {
       height: 100%;
       width: 0%;
-      background-color: #4caf50;
-      transition: width 0.5s;
+      background: linear-gradient(90deg,#22c55e,#16a34a);
+      transition: width 0.4s ease;
     }
 
     #subBars {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px 20px;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
-
     .subProgress {
-      background-color: #ddd;
+      background-color: #e5e7eb;
       border-radius: 10px;
-      height: 20px;
+      height: 18px;
       overflow: hidden;
       position: relative;
     }
     .subBar {
       height: 100%;
       width: 0%;
-      background-color: #2196f3;
-      transition: width 0.5s;
+      background: linear-gradient(90deg,#60a5fa,#2563eb);
+      transition: width 0.4s ease;
     }
     .subLabel {
       position: absolute;
       top: 0;
       left: 8px;
-      font-size: 0.9em;
+      font-size: 0.85em;
       color: #fff;
-      text-shadow: 0 0 3px #000;
-      line-height: 20px;
+      text-shadow: 0 0 3px rgba(0,0,0,0.5);
+      line-height: 18px;
+      font-weight: 600;
     }
 
-    #question { font-size: 1.2em; margin-top: 25px; }
-    #feedback { margin-top: 15px; font-weight: bold; min-height: 1.4em; }
-    input, button { padding: 10px; font-size: 1em; margin-top: 10px; }
-    input#answer { width:100%; box-sizing: border-box; }
-    button {
-      background: #4caf50;
+    #question { font-size: 1.2em; margin: 18px 0 8px; }
+    #feedback { margin-top: 12px; font-weight: 700; min-height: 1.4em; }
+    .muted { color:#6b7280; font-size: .95em; text-align:center; margin-top: 6px; }
+
+    /* Zone réponses */
+    #choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .choice {
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      user-select: none;
+      background: #fff;
+      transition: transform .05s ease, box-shadow .2s;
+    }
+    .choice:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.08); transform: translateY(-1px); }
+    .choice.correct { border-color: #22c55e; background: #ecfdf5; }
+    .choice.wrong   { border-color: #ef4444; background: #fef2f2; }
+
+    /* Saisie libre (dernier palier) */
+    #freeInputZone { margin-top: 10px; display: none; }
+    #answer { width:100%; box-sizing: border-box; padding: 10px; font-size: 1em; }
+    #submit {
+      margin-top: 10px;
+      padding: 10px 14px;
+      background: #22c55e;
       border: none;
       color: white;
       border-radius: 8px;
       cursor: pointer;
     }
-    button:hover { background: #45a049; }
-    .muted { color:#6b7280; font-size: .95em; text-align:center; margin-top: 6px; }
+    #submit:hover { background: #16a34a; }
   </style>
 </head>
 <body>
 
 <h1>Les deux empires 🏰</h1>
 <h2 id="levelTitle">Niveau 1 : repères</h2>
+
 <div id="mainProgress"><div id="mainBar"></div></div>
 <p id="general" class="muted">Compteur général : 0/0</p>
+
 <div id="subBars"></div>
+
 <p id="question"></p>
-<input type="text" id="answer" placeholder="Ta réponse ici">
-<button id="submit">Valider</button>
+
+<!-- QCM -->
+<div id="choices"></div>
+
+<!-- Saisie libre (dernier palier) -->
+<div id="freeInputZone">
+  <input type="text" id="answer" placeholder="Écris ta réponse ici">
+  <button id="submit">Valider</button>
+</div>
+
 <p id="feedback"></p>
 
 <script>
-// ——————————————
-// CONFIG DES NIVEAUX
-// ——————————————
+/* ========================
+   CONFIGURATION DES NIVEAUX
+   ======================== */
 const levels = [
   {
     title: "Niveau 1 : repères",
-    placeholder: "Réponds par un mot-clé",
+    placeholder: "Écris la réponse (dernier palier)",
+    requiredPerQuestion: 3,       // palier 1 & 2 = QCM, palier 3 = saisie libre
+    startScore: 0,                // démarre à 0
+    wrongPenaltyInput: 1,         // si la saisie est fausse: -1 palier
     questions: [
-      {q: "Quel empire se trouve à l’Ouest de l’Europe au début du Moyen Âge ?", a: "carolingien"},
-      {q: "Quel empire se trouve à l’Est de l’Europe, centré sur Constantinople ?", a: "byzantin"},
-      {q: "Quelle est la capitale de l’Empire carolingien ?", a: "aix"},
-      {q: "Quelle est la capitale de l’Empire byzantin ?", a: "constantinople"},
-      {q: "Quelle est la religion dominante dans l’Empire carolingien ?", a: "catholique"},
-      {q: "Quelle est la religion dominante dans l’Empire byzantin ?", a: "orthodoxe"},
-    ],
-    requiredPerQuestion: 3,
-    startScore: 1,
-    wrongPenalty: 2
+      {
+        q: "Quel empire se trouve à l’Ouest de l’Europe au début du Moyen Âge ?",
+        a: "carolingien",
+        options: ["carolingien", "byzantin", "ottoman", "romain d'orient"]
+      },
+      {
+        q: "Quel empire se trouve à l’Est de l’Europe, centré sur Constantinople ?",
+        a: "byzantin",
+        options: ["byzantin", "carolingien", "ottoman", "sassanide"]
+      },
+      {
+        q: "Quelle est la capitale de l’Empire carolingien ?",
+        display: "Aix-la-Chapelle",
+        // Saisie libre : on exige l'une de ces formes (casse/accents ignorés)
+        strictVariants: ["Aix-la-Chapelle", "Aix la chapelle", "Aix la Chapelle"],
+        a: "Aix-la-Chapelle", // pour le QCM (match exact normalisé)
+        options: ["Aix-la-Chapelle", "Aixe-la-chapelle", "Rome", "Constantinople"]
+      },
+      {
+        q: "Quelle est la capitale de l’Empire byzantin ?",
+        a: "Constantinople",
+        options: ["Constantinople", "Aix-la-Chapelle", "Aix-en-Provence", "Rome"]
+      },
+      {
+        q: "Religion dominante dans l’Empire carolingien ?",
+        a: "catholique",
+        options: ["catholique", "orthodoxe", "islam", "arianisme"]
+      },
+      {
+        q: "Religion dominante dans l’Empire byzantin ?",
+        a: "orthodoxe",
+        options: ["orthodoxe", "catholique", "islam", "arianisme"]
+      },
+    ]
   },
   {
     title: "Niveau 2 : les dates",
-    placeholder: "Réponds par une date (ex : 800, 527-565)",
-    questions: [
-      {q: "Fin de l’Empire romain d’Occident ?", validate: (t)=> onlyDigits(t)==="476", a: "476"},
-      {q: "Couronnement de Charlemagne ?", validate: (t)=> onlyDigits(t)==="800", a: "800"},
-      {q: "Fin de l’Empire byzantin (prise de Constantinople) ?", validate: (t)=> onlyDigits(t)==="1453", a: "1453"},
-      {q: "Règne de Justinien ? (indiquer les bornes)", validate: (t)=> containsBothYears(t,527,565), a: "527-565"},
-    ],
+    placeholder: "Écris la date (dernier palier)",
     requiredPerQuestion: 3,
-    startScore: 1,
-    wrongPenalty: 2
+    startScore: 0,
+    wrongPenaltyInput: 1,
+    questions: [
+      {
+        q: "Fin de l’Empire romain d’Occident ?",
+        a: "476",
+        validate: (t)=> onlyDigits(t)==="476",
+        options: ["476", "410", "800", "1453"]
+      },
+      {
+        q: "Couronnement de Charlemagne ?",
+        a: "800",
+        validate: (t)=> onlyDigits(t)==="800",
+        options: ["800", "732", "843", "527"]
+      },
+      {
+        q: "Fin de l’Empire byzantin (prise de Constantinople) ?",
+        a: "1453",
+        validate: (t)=> onlyDigits(t)==="1453",
+        options: ["1453", "1204", "1492", "476"]
+      },
+      {
+        q: "Règne de Justinien ? (indiquer les bornes)",
+        a: "527-565",
+        validate: (t)=> containsBothYears(t,527,565),
+        options: ["527-565", "565-610", "395-476", "306-337"]
+      },
+    ]
   }
 ];
 
-// ——————————————
-// ETAT
-// ——————————————
+/* ===== ETAT ===== */
 let currentLevel = 0;
 let localScores = [];
 let general = 0;
 let currentIndex = -1;
+let locked = false; // évite double clic pendant affichage correction
 
-// ——————————————
-// UTILS
-// ——————————————
+/* ===== UTILS ===== */
+// Normalisation : minuscules + suppression des accents
+function fold(str){
+  return (str||"")
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase()
+    .trim();
+}
 function onlyDigits(str) { return (str||"").replace(/\D/g, ""); }
 function containsBothYears(input,a,b){
-  const t = (input||"").toLowerCase().replace(/[^0-9–-]/g, "");
-  const digits = t.replace(/[–-]/g,"-");
-  return digits.includes(""+a) && digits.includes(""+b);
+  const t = fold(input).replace(/[^0-9-]/g, "");
+  return t.includes(String(a)) && t.includes(String(b));
 }
-function normalise(txt){ return (txt||"").trim().toLowerCase(); }
+function normalise(txt){ return fold(txt); }
+
+// Saisie libre : par défaut “contient la bonne réponse” (sans accents/casse).
+// EXCEPTION : si strictVariants est présent, on exige que le texte contienne
+// au moins une des variantes strictes (ex : “Aix-la-Chapelle” ou “Aix la chapelle”).
+function isCorrectFreeInput(q, inputRaw){
+  const txt = fold(inputRaw);
+
+  // Cas spécifiques (dates, etc.)
+  if (q.validate) return q.validate(inputRaw);
+
+  // Exigence stricte pour la capitale carolingienne
+  if (q.strictVariants && Array.isArray(q.strictVariants)) {
+    return q.strictVariants.some(v => txt.includes(fold(v)));
+  }
+
+  // Par défaut : on accepte si ça CONTIENT la bonne réponse
+  const ans = fold(q.a);
+  if (txt.includes(ans)) return true;
+
+  if (q.acceptable && Array.isArray(q.acceptable)) {
+    return q.acceptable.some(v => txt.includes(fold(v)));
+  }
+  return false;
+}
+
+function displayAnswer(q){
+  return q.display || q.a;
+}
 
 function findNextIndex(fromIdx) {
   const lvl = levels[currentLevel];
@@ -156,15 +261,17 @@ function findNextIndex(fromIdx) {
   return null;
 }
 
-// ——————————————
-// RENDU UI
-// ——————————————
+/* ===== RENDU UI ===== */
 const mainBar = document.getElementById("mainBar");
 const generalText = document.getElementById("general");
 const subBarsContainer = document.getElementById("subBars");
 const qElt = document.getElementById("question");
 const levelTitle = document.getElementById("levelTitle");
 const inputElt = document.getElementById("answer");
+const submitBtn = document.getElementById("submit");
+const choicesZone = document.getElementById("choices");
+const freeInputZone = document.getElementById("freeInputZone");
+const feedback = document.getElementById("feedback");
 
 function setupLevel(levelIdx){
   const lvl = levels[levelIdx];
@@ -179,12 +286,15 @@ function setupLevel(levelIdx){
   lvl.questions.forEach((q, i) => {
     const barContainer = document.createElement("div");
     barContainer.classList.add("subProgress");
+
     const bar = document.createElement("div");
     bar.classList.add("subBar");
     bar.id = "subBar" + i;
+
     const label = document.createElement("div");
     label.classList.add("subLabel");
     label.textContent = i + 1;
+
     barContainer.appendChild(bar);
     barContainer.appendChild(label);
     subBarsContainer.appendChild(barContainer);
@@ -207,21 +317,28 @@ function updateBars() {
 }
 
 function nextQuestion() {
+  locked = false;
   const lvl = levels[currentLevel];
+
   if (general >= lvl.questions.length) {
     if (currentLevel < levels.length - 1) {
       qElt.textContent = "🎉 Bravo ! Niveau " + (currentLevel + 1) + " terminé ! Passage au niveau suivant…";
-      document.getElementById("feedback").textContent = "";
-      document.getElementById("submit").disabled = true;
+      feedback.textContent = "";
+      submitBtn.disabled = true;
+      choicesZone.innerHTML = "";
+      freeInputZone.style.display = "none";
       setTimeout(()=>{
-        document.getElementById("submit").disabled = false;
+        submitBtn.disabled = false;
         currentLevel++;
         setupLevel(currentLevel);
       }, 1500);
       return;
     } else {
-      qElt.textContent = "🏁 Bravo ! Tu as terminé les deux niveaux !";
-      document.getElementById("submit").disabled = true;
+      qElt.textContent = "🏁 Bravo ! Tu as terminé tous les niveaux !";
+      feedback.textContent = "";
+      submitBtn.disabled = true;
+      choicesZone.innerHTML = "";
+      freeInputZone.style.display = "none";
       return;
     }
   }
@@ -230,48 +347,109 @@ function nextQuestion() {
   if (nxt === null) return;
   currentIndex = nxt;
 
-  qElt.textContent = lvl.questions[currentIndex].q;
-  document.getElementById("feedback").textContent = "";
-  document.getElementById("answer").value = "";
-  inputElt.focus();
+  renderQuestion();
 }
 
-// ——————————————
-// LOGIQUE DE REPONSE
-// ——————————————
+function renderQuestion(){
+  const lvl = levels[currentLevel];
+  const q = lvl.questions[currentIndex];
+  const req = lvl.requiredPerQuestion;
+  const progress = localScores[currentIndex];
+
+  qElt.textContent = q.q;
+  feedback.textContent = "";
+  inputElt.value = "";
+
+  // Dernier palier => saisie libre
+  if (progress >= req - 1) {
+    choicesZone.innerHTML = "";
+    freeInputZone.style.display = "block";
+    inputElt.focus();
+  } else {
+    // Paliers avant le dernier => QCM
+    freeInputZone.style.display = "none";
+    renderChoices(q);
+  }
+}
+
+function renderChoices(q){
+  const shuffled = [...q.options].sort(()=> Math.random()-0.5);
+  choicesZone.innerHTML = "";
+  shuffled.forEach(opt => {
+    const c = document.createElement("div");
+    c.className = "choice";
+    c.textContent = opt;
+    c.addEventListener("click", () => onChoiceClick(c, opt, q));
+    choicesZone.appendChild(c);
+  });
+}
+
+function isCorrectOption(text, q){
+  if (q.validate) {
+    return onlyDigits(text) === onlyDigits(q.a);
+  }
+  // QCM : match exact normalisé (casse/accents ignorés)
+  return normalise(text) === normalise(q.a);
+}
+
+function onChoiceClick(choiceElt, opt, q){
+  if (locked) return;
+  locked = true;
+
+  const ok = isCorrectOption(opt, q);
+  if (ok) {
+    choiceElt.classList.add("correct");
+    feedback.textContent = "✅ Bonne réponse !";
+    incrementProgress(1);
+    setTimeout(nextQuestion, 1000);
+  } else {
+    choiceElt.classList.add("wrong");
+    feedback.textContent = `❌ Mauvaise réponse. Bonne réponse : "${displayAnswer(q)}".`;
+    // surligne la bonne proposition
+    [...choicesZone.children].forEach(el=>{
+      if (isCorrectOption(el.textContent, q)) el.classList.add("correct");
+    });
+    setTimeout(nextQuestion, 2500);
+  }
+}
+
+/* ===== LOGIQUE SAISIE LIBRE (dernier palier) ===== */
 document.getElementById("submit").addEventListener("click", () => {
+  if (locked) return;
+  const lvl = levels[currentLevel];
+  const q = lvl.questions[currentIndex];
+  const req = levels[currentLevel].requiredPerQuestion;
   const inputRaw = document.getElementById("answer").value;
   if (!inputRaw) return;
 
-  const lvl = levels[currentLevel];
-  let isCorrect = false;
-  const q = lvl.questions[currentIndex];
-  if (q.validate) {
-    isCorrect = q.validate(inputRaw);
-  } else {
-    const correct = normalise(q.a);
-    const input = normalise(inputRaw);
-    isCorrect = input.includes(correct);
-  }
+  const ok = isCorrectFreeInput(q, inputRaw);
 
-  if (isCorrect) {
-    localScores[currentIndex] = Math.min(localScores[currentIndex] + 1, lvl.requiredPerQuestion);
-    document.getElementById("feedback").textContent = "✅ Bonne réponse !";
-    if (localScores[currentIndex] === lvl.requiredPerQuestion) {
-      general++;
-      document.getElementById("feedback").textContent += " Question validée 🎯";
-    }
-    updateBars();
-    setTimeout(nextQuestion, 1200);
+  if (ok) {
+    feedback.textContent = "✅ Bonne réponse ! Question validée 🎯";
+    incrementProgress(1, /*final=*/true);
+    locked = true;
+    setTimeout(nextQuestion, 1000);
   } else {
-    localScores[currentIndex] = Math.max(localScores[currentIndex] - lvl.wrongPenalty, 0);
-    const correction = q.a ? `La bonne réponse était : "${q.a}".` : "";
-    document.getElementById("feedback").textContent = `❌ Mauvaise réponse. ${correction}`;
+    // pénalité d'1 palier et retour aux QCM la prochaine fois
+    localScores[currentIndex] = Math.max(0, localScores[currentIndex] - levels[currentLevel].wrongPenaltyInput);
+    feedback.textContent = `❌ Mauvaise réponse. Bonne réponse : "${displayAnswer(q)}". (-1 palier)`;
     updateBars();
-    setTimeout(nextQuestion, 3000); // attendre 3 secondes avant question suivante
+    locked = true;
+    setTimeout(nextQuestion, 2500);
   }
 });
 
+function incrementProgress(amount, final=false){
+  const req = levels[currentLevel].requiredPerQuestion;
+  localScores[currentIndex] = Math.min(req, localScores[currentLevel] ? localScores[currentIndex] + amount : amount);
+  if (final || localScores[currentIndex] === req) {
+    // question pleinement validée
+    general++;
+  }
+  updateBars();
+}
+
+/* ===== LANCEMENT ===== */
 setupLevel(0);
 </script>
 
