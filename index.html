@@ -5,17 +5,19 @@
   <title>Quiz – Les deux empires</title>
   <style>
     body {
-      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-      background: #f8fafc;
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(#e0f2fe, #f8fafc);
       color: #222;
-      max-width: 820px;
-      margin: 50px auto;
+      max-width: 860px;
+      margin: 40px auto;
       padding: 25px;
       border-radius: 15px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.08);
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
     }
-    h1 { text-align: center; color: #2c3e50; margin-bottom: 6px; }
-    h2 { text-align:center; margin: 0 0 12px; color:#34495e; font-weight: 600; }
+    h1, h2 { text-align: center; margin: 5px 0 10px; }
+    h2 { color: #374151; }
 
     #mainProgress {
       background-color: #e5e7eb;
@@ -32,68 +34,51 @@
       transition: width 0.4s ease;
     }
 
-    #subBars {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px 20px;
-      margin-bottom: 12px;
-    }
-    .subProgress {
-      background-color: #e5e7eb;
-      border-radius: 10px;
-      height: 18px;
-      overflow: hidden;
-      position: relative;
-    }
-    .subBar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg,#60a5fa,#2563eb);
-      transition: width 0.4s ease;
-    }
-    .subLabel {
-      position: absolute;
-      top: 0;
-      left: 8px;
-      font-size: 0.85em;
-      color: #fff;
-      text-shadow: 0 0 3px rgba(0,0,0,0.5);
-      line-height: 18px;
-      font-weight: 600;
-    }
+    #subBars { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; margin-bottom: 12px; }
+    .subProgress { background-color: #e5e7eb; border-radius: 10px; height: 18px; overflow: hidden; position: relative; }
+    .subBar { height: 100%; width: 0%; background: linear-gradient(90deg,#60a5fa,#2563eb); transition: width 0.4s ease; }
+    .subLabel { position: absolute; top: 0; left: 8px; font-size: 0.85em; color: #fff; text-shadow: 0 0 3px rgba(0,0,0,0.5); line-height: 18px; font-weight: 600; }
 
-    #question { font-size: 1.2em; margin: 18px 0 8px; }
-    #feedback { margin-top: 12px; font-weight: 700; min-height: 1.4em; }
-    .muted { color:#6b7280; font-size: .95em; text-align:center; margin-top: 6px; }
-
-    /* Zone réponses */
-    #choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    #question { font-size: 1.2em; margin: 18px 0 8px; text-align: center; }
+    #feedback { margin-top: 10px; font-weight: 700; text-align: center; }
+    #choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px auto; max-width: 600px; }
     .choice {
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      padding: 10px 12px;
-      cursor: pointer;
-      user-select: none;
-      background: #fff;
-      transition: transform .05s ease, box-shadow .2s;
+      border: 1px solid #d1d5db; border-radius: 10px; padding: 10px; cursor: pointer;
+      background: #fff; text-align: center; transition: transform .1s, box-shadow .2s;
     }
-    .choice:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.08); transform: translateY(-1px); }
-    .choice.correct { border-color: #22c55e; background: #ecfdf5; }
-    .choice.wrong   { border-color: #ef4444; background: #fef2f2; }
+    .choice:hover { box-shadow: 0 5px 10px rgba(0,0,0,0.08); transform: translateY(-2px); }
+    .choice.correct { background: #dcfce7; border-color: #22c55e; }
+    .choice.wrong { background: #fee2e2; border-color: #ef4444; }
 
-    /* Saisie libre (dernier palier) */
-    #freeInputZone { margin-top: 10px; display: none; }
-    #answer { width:100%; box-sizing: border-box; padding: 10px; font-size: 1em; }
-    #submit {
-      margin-top: 10px;
-      padding: 10px 14px;
-      background: #22c55e;
-      border: none;
-      color: white;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+    #freeInputZone { display: none; text-align: center; margin-top: 10px; }
+    #answer { padding: 8px; width: 70%; font-size: 1em; }
+    #submit { margin-top: 10px; padding: 10px 14px; background: #22c55e; color: white; border: none; border-radius: 8px; cursor: pointer; }
     #submit:hover { background: #16a34a; }
+
+    /* === ARENE === */
+    #arena {
+      position: relative;
+      height: 240px;
+      margin-top: 30px;
+      background: linear-gradient(#f0f9ff, #e0f2fe);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    #hero, #zombie, #projectile {
+      position: absolute;
+      bottom: 0;
+      height: 180px;
+      image-rendering: pixelated;
+    }
+    #hero { left: 20px; }
+    #zombie { right: 20px; transition: right 0.1s linear; }
+    #projectile {
+      width: 40px;
+      height: 40px;
+      background: radial-gradient(circle, #38bdf8 0%, #0284c7 80%);
+      border-radius: 50%;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -102,356 +87,243 @@
 <h2 id="levelTitle">Niveau 1 : repères</h2>
 
 <div id="mainProgress"><div id="mainBar"></div></div>
-<p id="general" class="muted">Compteur général : 0/0</p>
+<p id="general" class="muted" style="text-align:center;">Compteur général : 0/0</p>
 
 <div id="subBars"></div>
-
 <p id="question"></p>
 
-<!-- QCM -->
 <div id="choices"></div>
 
-<!-- Saisie libre (dernier palier) -->
 <div id="freeInputZone">
   <input type="text" id="answer" placeholder="Écris ta réponse ici">
+  <br>
   <button id="submit">Valider</button>
 </div>
 
 <p id="feedback"></p>
 
+<!-- Zone arène -->
+<div id="arena">
+  <img id="hero" src="img/hero.png" alt="Héros">
+  <img id="zombie" src="img/zombi.png" alt="Zombie">
+  <div id="projectile"></div>
+</div>
+
 <script>
-/* ========================
-   CONFIGURATION DES NIVEAUX
-   ======================== */
 const levels = [
   {
     title: "Niveau 1 : repères",
     placeholder: "Écris la réponse (dernier palier)",
-    requiredPerQuestion: 3,       // palier 1 & 2 = QCM, palier 3 = saisie libre
-    startScore: 0,                // démarre à 0
-    wrongPenaltyInput: 1,         // si la saisie est fausse: -1 palier
-    questions: [
-      {
-        q: "Quel empire se trouve à l’Ouest de l’Europe au début du Moyen Âge ?",
-        a: "carolingien",
-        options: ["carolingien", "byzantin", "ottoman", "romain d'orient"]
-      },
-      {
-        q: "Quel empire se trouve à l’Est de l’Europe, centré sur Constantinople ?",
-        a: "byzantin",
-        options: ["byzantin", "carolingien", "ottoman", "sassanide"]
-      },
-      {
-        q: "Quelle est la capitale de l’Empire carolingien ?",
-        display: "Aix-la-Chapelle",
-        // Saisie libre : on exige l'une de ces formes (casse/accents ignorés)
-        strictVariants: ["Aix-la-Chapelle", "Aix la chapelle", "Aix la Chapelle"],
-        a: "Aix-la-Chapelle", // pour le QCM (match exact normalisé)
-        options: ["Aix-la-Chapelle", "Aixe-la-chapelle", "Rome", "Constantinople"]
-      },
-      {
-        q: "Quelle est la capitale de l’Empire byzantin ?",
-        a: "Constantinople",
-        options: ["Constantinople", "Aix-la-Chapelle", "Aix-en-Provence", "Rome"]
-      },
-      {
-        q: "Religion dominante dans l’Empire carolingien ?",
-        a: "catholique",
-        options: ["catholique", "orthodoxe", "islam", "arianisme"]
-      },
-      {
-        q: "Religion dominante dans l’Empire byzantin ?",
-        a: "orthodoxe",
-        options: ["orthodoxe", "catholique", "islam", "arianisme"]
-      },
-    ]
-  },
-  {
-    title: "Niveau 2 : les dates",
-    placeholder: "Écris la date (dernier palier)",
     requiredPerQuestion: 3,
     startScore: 0,
     wrongPenaltyInput: 1,
     questions: [
-      {
-        q: "Fin de l’Empire romain d’Occident ?",
-        a: "476",
-        validate: (t)=> onlyDigits(t)==="476",
-        options: ["476", "410", "800", "1453"]
-      },
-      {
-        q: "Couronnement de Charlemagne ?",
-        a: "800",
-        validate: (t)=> onlyDigits(t)==="800",
-        options: ["800", "732", "843", "527"]
-      },
-      {
-        q: "Fin de l’Empire byzantin (prise de Constantinople) ?",
-        a: "1453",
-        validate: (t)=> onlyDigits(t)==="1453",
-        options: ["1453", "1204", "1492", "476"]
-      },
-      {
-        q: "Règne de Justinien ? (indiquer les bornes)",
-        a: "527-565",
-        validate: (t)=> containsBothYears(t,527,565),
-        options: ["527-565", "565-610", "395-476", "306-337"]
-      },
+      { q: "Quel empire se trouve à l’Ouest de l’Europe au début du Moyen Âge ?", a: "carolingien", options: ["carolingien","byzantin","ottoman","romain d'orient"] },
+      { q: "Quel empire se trouve à l’Est de l’Europe, centré sur Constantinople ?", a: "byzantin", options: ["byzantin","carolingien","ottoman","sassanide"] },
+      { q: "Quelle est la capitale de l’Empire carolingien ?", a: "Aix-la-Chapelle", acceptable: ["aix la chapelle","aix-la-chapelle","aix la Chapelle"], options: ["Aix-la-Chapelle","Aixe-la-chapelle","Rome","Constantinople"] },
+      { q: "Quelle est la capitale de l’Empire byzantin ?", a: "Constantinople", options: ["Constantinople","Aix-la-chapelle","Aix-en-provence","Rome"] },
+      { q: "Religion dominante dans l’Empire carolingien ?", a: "catholique", options: ["catholique","orthodoxe","islam","arianisme"] },
+      { q: "Religion dominante dans l’Empire byzantin ?", a: "orthodoxe", options: ["orthodoxe","catholique","islam","arianisme"] }
     ]
   }
 ];
 
-/* ===== ETAT ===== */
 let currentLevel = 0;
 let localScores = [];
 let general = 0;
 let currentIndex = -1;
-let locked = false; // évite double clic pendant affichage correction
+let locked = false;
+let zombieInterval = null;
+let zombiePosition = 20; // en pixels depuis la droite
+let projectileInterval = null;
 
-/* ===== UTILS ===== */
-// Normalisation : minuscules + suppression des accents
-function fold(str){
-  return (str||"")
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g,'')
-    .toLowerCase()
-    .trim();
-}
-function onlyDigits(str) { return (str||"").replace(/\D/g, ""); }
-function containsBothYears(input,a,b){
-  const t = fold(input).replace(/[^0-9-]/g, "");
-  return t.includes(String(a)) && t.includes(String(b));
-}
-function normalise(txt){ return fold(txt); }
-
-// Saisie libre : par défaut “contient la bonne réponse” (sans accents/casse).
-// EXCEPTION : si strictVariants est présent, on exige que le texte contienne
-// au moins une des variantes strictes (ex : “Aix-la-Chapelle” ou “Aix la chapelle”).
-function isCorrectFreeInput(q, inputRaw){
-  const txt = fold(inputRaw);
-
-  // Cas spécifiques (dates, etc.)
-  if (q.validate) return q.validate(inputRaw);
-
-  // Exigence stricte pour la capitale carolingienne
-  if (q.strictVariants && Array.isArray(q.strictVariants)) {
-    return q.strictVariants.some(v => txt.includes(fold(v)));
-  }
-
-  // Par défaut : on accepte si ça CONTIENT la bonne réponse
-  const ans = fold(q.a);
-  if (txt.includes(ans)) return true;
-
-  if (q.acceptable && Array.isArray(q.acceptable)) {
-    return q.acceptable.some(v => txt.includes(fold(v)));
-  }
-  return false;
-}
-
-function displayAnswer(q){
-  return q.display || q.a;
-}
-
-function findNextIndex(fromIdx) {
-  const lvl = levels[currentLevel];
-  const req = lvl.requiredPerQuestion;
-  const n = lvl.questions.length;
-  for (let i = fromIdx + 1; i < n; i++) if (localScores[i] < req) return i;
-  for (let i = 0; i <= fromIdx; i++) if (localScores[i] < req) return i;
-  return null;
-}
-
-/* ===== RENDU UI ===== */
 const mainBar = document.getElementById("mainBar");
-const generalText = document.getElementById("general");
 const subBarsContainer = document.getElementById("subBars");
+const generalText = document.getElementById("general");
 const qElt = document.getElementById("question");
-const levelTitle = document.getElementById("levelTitle");
-const inputElt = document.getElementById("answer");
-const submitBtn = document.getElementById("submit");
+const feedback = document.getElementById("feedback");
 const choicesZone = document.getElementById("choices");
 const freeInputZone = document.getElementById("freeInputZone");
-const feedback = document.getElementById("feedback");
+const inputElt = document.getElementById("answer");
+const submitBtn = document.getElementById("submit");
+const zombieElt = document.getElementById("zombie");
+const projectileElt = document.getElementById("projectile");
 
-function setupLevel(levelIdx){
-  const lvl = levels[levelIdx];
-  levelTitle.textContent = lvl.title;
-  inputElt.placeholder = lvl.placeholder;
-
+function setupLevel(idx) {
+  const lvl = levels[idx];
   localScores = new Array(lvl.questions.length).fill(lvl.startScore);
-  general = 0;
-  currentIndex = -1;
-
+  general = 0; currentIndex = -1;
   subBarsContainer.innerHTML = "";
-  lvl.questions.forEach((q, i) => {
-    const barContainer = document.createElement("div");
-    barContainer.classList.add("subProgress");
-
-    const bar = document.createElement("div");
-    bar.classList.add("subBar");
-    bar.id = "subBar" + i;
-
-    const label = document.createElement("div");
-    label.classList.add("subLabel");
-    label.textContent = i + 1;
-
-    barContainer.appendChild(bar);
-    barContainer.appendChild(label);
-    subBarsContainer.appendChild(barContainer);
+  lvl.questions.forEach((_,i)=>{
+    const bar=document.createElement("div");
+    bar.className="subProgress";
+    bar.innerHTML=`<div class="subBar" id="subBar${i}"></div><div class="subLabel">${i+1}</div>`;
+    subBarsContainer.appendChild(bar);
   });
-
   updateBars();
   nextQuestion();
 }
 
-function updateBars() {
-  const total = levels[currentLevel].questions.length;
-  mainBar.style.width = (general / total) * 100 + "%";
-  generalText.textContent = `Compteur général : ${general}/${total}`;
-  const req = levels[currentLevel].requiredPerQuestion;
-  levels[currentLevel].questions.forEach((_, i) => {
-    const bar = document.getElementById("subBar" + i);
-    const val = Math.max(0, Math.min(localScores[i], req));
-    bar.style.width = (val / req) * 100 + "%";
+function updateBars(){
+  const lvl=levels[currentLevel];
+  const total=lvl.questions.length;
+  mainBar.style.width=(general/total)*100+"%";
+  generalText.textContent=`Compteur général : ${general}/${total}`;
+  const req=lvl.requiredPerQuestion;
+  lvl.questions.forEach((_,i)=>{
+    const bar=document.getElementById("subBar"+i);
+    const val=Math.max(0,Math.min(localScores[i],req));
+    bar.style.width=(val/req)*100+"%";
   });
 }
 
-function nextQuestion() {
-  locked = false;
-  const lvl = levels[currentLevel];
-
-  if (general >= lvl.questions.length) {
-    if (currentLevel < levels.length - 1) {
-      qElt.textContent = "🎉 Bravo ! Niveau " + (currentLevel + 1) + " terminé ! Passage au niveau suivant…";
-      feedback.textContent = "";
-      submitBtn.disabled = true;
-      choicesZone.innerHTML = "";
-      freeInputZone.style.display = "none";
-      setTimeout(()=>{
-        submitBtn.disabled = false;
-        currentLevel++;
-        setupLevel(currentLevel);
-      }, 1500);
-      return;
-    } else {
-      qElt.textContent = "🏁 Bravo ! Tu as terminé tous les niveaux !";
-      feedback.textContent = "";
-      submitBtn.disabled = true;
-      choicesZone.innerHTML = "";
-      freeInputZone.style.display = "none";
-      return;
-    }
+function nextQuestion(){
+  clearInterval(zombieInterval);
+  zombiePosition = 20;
+  zombieElt.style.right = zombiePosition + "px";
+  zombieElt.style.display = "block";
+  locked=false;
+  const lvl=levels[currentLevel];
+  if (general>=lvl.questions.length){
+    qElt.textContent="🎉 Bravo ! Niveau terminé !";
+    choicesZone.innerHTML=""; freeInputZone.style.display="none";
+    feedback.textContent="";
+    return;
   }
-
-  const nxt = findNextIndex(currentIndex);
-  if (nxt === null) return;
-  currentIndex = nxt;
-
+  const nxt=findNextIndex(currentIndex);
+  currentIndex=nxt;
   renderQuestion();
+  startZombie();
+}
+
+function findNextIndex(fromIdx){
+  const lvl=levels[currentLevel];
+  const req=lvl.requiredPerQuestion;
+  const n=lvl.questions.length;
+  for(let i=fromIdx+1;i<n;i++) if(localScores[i]<req) return i;
+  for(let i=0;i<=fromIdx;i++) if(localScores[i]<req) return i;
+  return null;
 }
 
 function renderQuestion(){
-  const lvl = levels[currentLevel];
-  const q = lvl.questions[currentIndex];
-  const req = lvl.requiredPerQuestion;
-  const progress = localScores[currentIndex];
-
-  qElt.textContent = q.q;
-  feedback.textContent = "";
-  inputElt.value = "";
-
-  // Dernier palier => saisie libre
-  if (progress >= req - 1) {
-    choicesZone.innerHTML = "";
-    freeInputZone.style.display = "block";
-    inputElt.focus();
+  const lvl=levels[currentLevel];
+  const q=lvl.questions[currentIndex];
+  const progress=localScores[currentIndex];
+  qElt.textContent=q.q;
+  feedback.textContent="";
+  inputElt.value="";
+  if(progress>=lvl.requiredPerQuestion-1){
+    choicesZone.innerHTML="";
+    freeInputZone.style.display="block";
   } else {
-    // Paliers avant le dernier => QCM
-    freeInputZone.style.display = "none";
+    freeInputZone.style.display="none";
     renderChoices(q);
   }
 }
 
 function renderChoices(q){
-  const shuffled = [...q.options].sort(()=> Math.random()-0.5);
-  choicesZone.innerHTML = "";
-  shuffled.forEach(opt => {
-    const c = document.createElement("div");
-    c.className = "choice";
-    c.textContent = opt;
-    c.addEventListener("click", () => onChoiceClick(c, opt, q));
+  const shuffled=[...q.options].sort(()=>Math.random()-0.5);
+  choicesZone.innerHTML="";
+  shuffled.forEach(opt=>{
+    const c=document.createElement("div");
+    c.className="choice";
+    c.textContent=opt;
+    c.addEventListener("click",()=>onChoiceClick(c,opt,q));
     choicesZone.appendChild(c);
   });
 }
 
-function isCorrectOption(text, q){
-  if (q.validate) {
-    return onlyDigits(text) === onlyDigits(q.a);
-  }
-  // QCM : match exact normalisé (casse/accents ignorés)
-  return normalise(text) === normalise(q.a);
+function normalize(txt){return (txt||"").toLowerCase().trim();}
+function isCorrectFreeInput(q,txt){
+  txt=normalize(txt);
+  if(q.acceptable) return q.acceptable.some(v=>txt===normalize(v));
+  return txt.includes(normalize(q.a));
 }
+function isCorrectOption(opt,q){return normalize(opt)===normalize(q.a);}
 
-function onChoiceClick(choiceElt, opt, q){
-  if (locked) return;
-  locked = true;
-
-  const ok = isCorrectOption(opt, q);
-  if (ok) {
-    choiceElt.classList.add("correct");
-    feedback.textContent = "✅ Bonne réponse !";
+function onChoiceClick(elt,opt,q){
+  if(locked)return;
+  const ok=isCorrectOption(opt,q);
+  locked=true;
+  if(ok){
+    elt.classList.add("correct");
+    feedback.textContent="✅ Bonne réponse !";
+    attack();
     incrementProgress(1);
-    setTimeout(nextQuestion, 1000);
+    setTimeout(nextQuestion,1200);
   } else {
-    choiceElt.classList.add("wrong");
-    feedback.textContent = `❌ Mauvaise réponse. Bonne réponse : "${displayAnswer(q)}".`;
-    // surligne la bonne proposition
-    [...choicesZone.children].forEach(el=>{
-      if (isCorrectOption(el.textContent, q)) el.classList.add("correct");
-    });
-    setTimeout(nextQuestion, 2500);
+    elt.classList.add("wrong");
+    feedback.textContent=`❌ Mauvaise réponse. Bonne réponse : ${q.a}`;
+    setTimeout(nextQuestion,2500);
   }
 }
 
-/* ===== LOGIQUE SAISIE LIBRE (dernier palier) ===== */
-document.getElementById("submit").addEventListener("click", () => {
-  if (locked) return;
-  const lvl = levels[currentLevel];
-  const q = lvl.questions[currentIndex];
-  const req = levels[currentLevel].requiredPerQuestion;
-  const inputRaw = document.getElementById("answer").value;
-  if (!inputRaw) return;
-
-  const ok = isCorrectFreeInput(q, inputRaw);
-
-  if (ok) {
-    feedback.textContent = "✅ Bonne réponse ! Question validée 🎯";
-    incrementProgress(1, /*final=*/true);
-    locked = true;
-    setTimeout(nextQuestion, 1000);
+submitBtn.addEventListener("click",()=>{
+  if(locked)return;
+  const q=levels[currentLevel].questions[currentIndex];
+  const ok=isCorrectFreeInput(q,inputElt.value);
+  locked=true;
+  if(ok){
+    feedback.textContent="✅ Bonne réponse !";
+    attack();
+    incrementProgress(1,true);
+    setTimeout(nextQuestion,1200);
   } else {
-    // pénalité d'1 palier et retour aux QCM la prochaine fois
-    localScores[currentIndex] = Math.max(0, localScores[currentIndex] - levels[currentLevel].wrongPenaltyInput);
-    feedback.textContent = `❌ Mauvaise réponse. Bonne réponse : "${displayAnswer(q)}". (-1 palier)`;
+    localScores[currentIndex]=Math.max(0,localScores[currentIndex]-1);
+    feedback.textContent=`❌ Mauvaise réponse. Bonne réponse : ${q.a}`;
     updateBars();
-    locked = true;
-    setTimeout(nextQuestion, 2500);
+    setTimeout(nextQuestion,2500);
   }
 });
 
-function incrementProgress(amount, final=false){
-  const req = levels[currentLevel].requiredPerQuestion;
-  localScores[currentIndex] = Math.min(req, localScores[currentLevel] ? localScores[currentIndex] + amount : amount);
-  if (final || localScores[currentIndex] === req) {
-    // question pleinement validée
-    general++;
-  }
+function incrementProgress(v,final=false){
+  const req=levels[currentLevel].requiredPerQuestion;
+  localScores[currentIndex]=Math.min(req,localScores[currentIndex]+v);
+  if(final||localScores[currentIndex]===req)general++;
   updateBars();
 }
 
-/* ===== LANCEMENT ===== */
+/* === ZOMBIE & HERO ANIMATION === */
+function startZombie(){
+  clearInterval(zombieInterval);
+  zombieInterval=setInterval(()=>{
+    zombiePosition+=0.7; // 🧟 vitesse ralentie ÷3
+    zombieElt.style.right=zombiePosition+"px";
+    if(zombiePosition>600){
+      clearInterval(zombieInterval);
+      feedback.textContent="💀 Le zombie t’a attrapé ! Question suivante...";
+      setTimeout(nextQuestion,2000);
+    }
+  },50);
+}
+
+function attack(){
+  const proj=projectileElt;
+  proj.style.display="block";
+  proj.style.left="100px";
+  proj.style.bottom="100px";
+  let pos=100;
+  clearInterval(projectileInterval);
+  projectileInterval=setInterval(()=>{
+    pos+=25;
+    proj.style.left=pos+"px";
+    const projRect = proj.getBoundingClientRect();
+    const zombRect = zombieElt.getBoundingClientRect();
+    if (projRect.right >= zombRect.left + 10) {
+      // 💥 collision détectée
+      clearInterval(projectileInterval);
+      proj.style.display="none";
+      zombieElt.style.display="none";
+      setTimeout(()=>{zombieElt.style.display="block"; zombiePosition=20; zombieElt.style.right="20px";},600);
+    }
+    if(pos>700){
+      clearInterval(projectileInterval);
+      proj.style.display="none";
+    }
+  },50);
+}
+
 setupLevel(0);
 </script>
-
 </body>
 </html>
