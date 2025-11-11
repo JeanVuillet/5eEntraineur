@@ -13,11 +13,14 @@ app.use(express.json());
 
 const mongoUri = process.env.MONGODB_URI;
 
-mongoose.connect(mongoUri)
-    .then(() => console.log('Connexion à MongoDB Atlas établie !'))
-    .catch(err => console.error('Erreur de connexion à MongoDB Atlas :', err));
+// ====== Connexion MongoDB =======
 
-// ==== SCHEMA SIMPLE ====
+mongoose.connect(mongoUri)
+    .then(() => console.log('✅ Connexion à MongoDB Atlas établie !'))
+    .catch(err => console.error('❌ Erreur de connexion à MongoDB Atlas :', err));
+
+
+// ====== Schema =======
 
 const PlayerSchema = new mongoose.Schema({
     firstName: String,
@@ -31,25 +34,25 @@ const PlayerSchema = new mongoose.Schema({
 const Player = mongoose.model('Player', PlayerSchema, 'players');
 
 
-// ==== NORMALISATION DOUCE ====
+// ====== NORMALISATION =======
 
-function normalize(s) {
-    return (s || '')
+function normalize(str) {
+    return (str || '')
         .normalize("NFD")
-        .replace(/\p{Diacritic}/gu, "")
-        .replace(/\s+/g, " ")
+        .replace(/\p{Diacritic}/gu, "") // enlève accents
+        .replace(/\s+/g, " ")           // espaces multiples -> un seul
         .trim()
         .toLowerCase();
 }
 
 function normalizeClassroom(c) {
     return normalize(c)
-        .replace(/(?<=\d)(e|de|d)/, "") // 2de -> 2, 2d -> 2
-        .toUpperCase();                // 2a -> 2A
+        .replace(/(?<=\d)(e|de|d)/, "") // 2de -> 2 ; 2d -> 2
+        .toUpperCase();                 // 2a -> 2A
 }
 
 
-// ==== ROUTE LOGIN ====
+// ====== ROUTE LOGIN =======
 
 app.post('/api/register', async (req, res) => {
     try {
@@ -63,17 +66,22 @@ app.post('/api/register', async (req, res) => {
         const normLast = normalize(lastName);
         const normClass = normalizeClassroom(classroom);
 
-        // Gestion spécifique 2CD
+        // Fusion 2C et 2D
         const classesToCheck =
             normClass === '2C' || normClass === '2D'
                 ? ['2CD']
                 : [normClass];
 
-        const found = await Player.findOne({
-            classroom: { $in: classesToCheck },
-            firstName: new RegExp(`^${normFirst}$`, "i"),
-            lastName: new RegExp(`^${normLast}$`, "i")
+        // On récupère tous les élèves de cette classe
+        const all = await Player.find({
+            classroom: { $in: classesToCheck }
         });
+
+        // On compare les noms normalisés côté Node
+        const found = all.find(p =>
+            normalize(p.firstName) === normFirst &&
+            normalize(p.lastName) === normLast
+        );
 
         if (!found) {
             return res.status(404).json({ ok: false, error: "Élève introuvable." });
@@ -89,13 +97,13 @@ app.post('/api/register', async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Erreur register:", err);
         res.status(500).json({ ok: false, error: "Erreur serveur." });
     }
 });
 
 
-// ==== SAVE PROGRESS ====
+// ====== SAVE PROGRESS =======
 
 app.post('/api/save-progress', async (req, res) => {
     try {
@@ -118,32 +126,34 @@ app.post('/api/save-progress', async (req, res) => {
         return res.status(200).json({ message: "Progression sauvegardée !" });
 
     } catch (err) {
-        console.error(err);
+        console.error("Erreur save-progress:", err);
         res.status(500).json({ message: "Erreur serveur." });
     }
 });
 
 
-// ==== LISTE PROF ====
+// ====== LISTE PROF =======
 
 app.get('/api/players', async (req, res) => {
     try {
         const players = await Player.find().sort({ created_at: -1 });
         res.status(200).json(players);
     } catch (err) {
-        console.error(err);
+        console.error("Erreur players:", err);
         res.status(500).json({ message: "Erreur serveur." });
     }
 });
 
 
-// ==== SERVE INDEX ====
+// ====== SERVE INDEX =======
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 
 
+// ====== START SERVER =======
+
 app.listen(port, () => {
-    console.log(`Serveur Express en cours d'exécution sur le port ${port}`);
+    console.log(`✅ Serveur Express lancé sur http://localhost:${port}`);
 });
