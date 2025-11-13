@@ -1,0 +1,43 @@
+{
+  "levels": [
+    {
+      "id": "niveau-1",
+      "title": "Niveau 1 : Les Empires",
+      "requiredPerQuestion": 3,
+      "questions": [
+        {
+          "id": 1,
+          "q": "Quel empire se trouve à l'Ouest de l'Europe au début du Moyen Âge ?",
+          "a": "carolingien",
+          "options": ["carolingien", "byzantin", "ottoman", "romain d'orient"]
+        },
+        {
+          "id": 2, 
+          "q": "Quel empire se trouve à l'Est de l'Europe, centré sur Constantinople ?",
+          "a": "byzantin",
+          "options": ["byzantin", "carolingien", "ottoman", "sassanide"]
+        },
+        {
+          "id": 3,
+          "q": "Quelle est la capitale de l'Empire carolingien ?",
+          "a": "Aix-la-Chapelle",
+          "acceptable": ["aix la chapelle", "aix-la-chapelle", "aix la Chapelle"],
+          "options": ["Aix-la-Chapelle", "Aixe-la-chapelle", "Rome", "Constantinople"]
+        }
+      ]
+    },
+    {
+      "id": "niveau-2",
+      "title": "Niveau 2 : Les Capitales", 
+      "requiredPerQuestion": 3,
+      "questions": [
+        {
+          "id": 4,
+          "q": "Quelle était la capitale de l'Empire romain d'Occident ?",
+          "a": "Rome",
+          "options": ["Rome", "Constantinople", "Ravenne", "Milan"]
+        }
+      ]
+    }
+  ]
+}
