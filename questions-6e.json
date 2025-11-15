@@ -1,0 +1,15 @@
+[
+  {
+    "id": "niveau1-6e",
+    "title": "Niveau 1 (6e) : La Préhistoire",
+    "requiredPerQuestion": 2,
+    "questions": [
+      { "q": "Comment s'appelle la période avant l'invention de l'écriture ?", "a": "La Préhistoire", "options": ["L'Antiquité", "Le Moyen Âge", "La Préhistoire", "Les Temps Modernes"] },
+      { "q": "Quel outil en pierre taillée est emblématique du Paléolithique ?", "a": "Le biface", "options": ["La hache", "Le marteau", "Le biface", "La poterie"] },
+      { "q": "Dans quelle grotte célèbre trouve-t-on des peintures rupestres en France ?", "a": "Lascaux", "options": ["Chauvet", "Cosquer", "Lascaux", "Niaux"] },
+      { "q": "Quel changement majeur marque le début du Néolithique ?", "a": "L'agriculture", "options": ["Le feu", "L'écriture", "L'agriculture", "La roue"] },
+      { "q": "Comment appelle-t-on les grandes pierres dressées par les hommes du Néolithique ?", "a": "Les mégalithes", "options": ["Les pyramides", "Les statues", "Les totems", "Les mégalithes"] },
+      { "q": "Quel est le premier métal travaillé par l'homme ?", "a": "Le cuivre", "options": ["Le fer", "L'or", "Le cuivre", "L'étain"] }
+    ]
+  }
+]

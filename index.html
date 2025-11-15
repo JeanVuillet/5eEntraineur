@@ -5,192 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>5e Entraîneur – Quiz Interactif</title>
   <style>
-    /* --------------------------------- */
-    /* STYLES GÉNÉRAUX ET FORMULAIRE     */
-    /* --------------------------------- */
-    :root {
-      --bg: #f8fafc;
-      --card: #ffffff;
-      --primary: #2563eb;
-      --ok: #16a34a;
-      --warn: #ef4444;
-      --text: #111827;
-      --muted: #6b7280;
-      --shadow: 0 10px 25px rgba(0,0,0,.08);
-      
-      --arena-h: clamp(180px, 36vh, 320px);
-      --char-h: clamp(90px, 26vh, 200px);
-      --proj-size: clamp(18px, 3vh, 28px);
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--text);
-      background: linear-gradient(#e0f2fe, var(--bg));
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-    }
-    header {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 12px; padding: 14px 18px; background: #fff;
-      box-shadow: var(--shadow); position: sticky; top: 0; z-index: 20;
-    }
-    header h1 { font-size: 18px; margin: 0; }
-    #studentBadge { font-size: 14px; color: var(--muted); }
-    #logoutBtn { 
-        background: #94a3b8 !important; 
-        color: #fff; padding: 6px 10px !important; 
-        font-size: 14px !important; width: auto !important; 
-    }
-    #logoutBtn:hover { background: #64748b !important; }
-    .wrap {
-      max-width: 960px; width: 100%; margin: 24px auto; padding: 0 16px; flex: 1;
-    }
-    .card {
-      background: var(--card); box-shadow: var(--shadow); border-radius: 14px; padding: 20px;
-    }
-    .form {
-      display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 10px;
-    }
-    label { font-size: 14px; color: var(--muted); }
-    input, select, button {
-      width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #d1d5db;
-      font-size: 16px; outline: none; transition: box-shadow .2s, transform .02s;
-      background: #fff;
-    }
-    input:focus, select:focus {
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, .2); border-color: #93c5fd;
-    }
-    button {
-      background: var(--primary); color: #fff; border: none; cursor: pointer; font-weight: 600;
-    }
-    button:hover { filter: brightness(1.05); }
-    button:active { transform: translateY(1px); }
-    .row {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-    }
-    .hint { color: var(--muted); font-size: 13px; margin-top: 6px; }
-    .error { color: var(--warn); font-weight: 600; margin-top: 8px; }
-    .ok { color: var(--ok); font-weight: 600; margin-top: 8px; }
-    #game { display: none; margin-top: 18px; }
-    
-    /* Styles pour le Tableau */
-    #playersTable th { font-weight: 600; padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: left; }
-    #playersTable td { padding: 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-    .player-finished td {
-      background-color: #f0fdf4 !important;
-      color: #166534;
-    }
-    .player-finished strong {
-      color: #15803d;
-    }
-    #recentPlayers tr:nth-child(even):not(.player-finished) { background-color: #f8fafc; }
-    .action-btn { 
-      padding: 5px 9px !important; font-size: 12px !important; 
-      width: auto !important; margin: 2px; border-radius: 6px;
-    }
-    .reset-btn { background: #fee2e2 !important; color: #b91c1c; }
-    .reset-btn:hover { background: #fecaca !important; }
-    .impersonate-btn { background: #e0e7ff !important; color: #3730a3; }
-    .impersonate-btn:hover { background: #c7d2fe !important; }
-
-
-    /* Styles pour la liste des questions */
-    .questions-list {
-      display: flex; gap: 4px; flex-wrap: wrap; margin: 4px 0;
-    }
-    .question-indicator {
-      width: 24px; height: 24px; border-radius: 4px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: bold; border: 1px solid #e5e7eb;
-    }
-    .question-valid { background: #dcfce7; color: #16a34a; border-color: #22c55e; }
-    .question-invalid { background: #fef2f2; color: #ef4444; border-color: #fecaca; }
-
-    @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
-    
-    /* STYLES DU QUIZ INTERACTIF */
-    .quiz-container { padding: 0; box-shadow: none; }
-    .quiz-container h1, .quiz-container h2 { text-align: center; margin: 4px 0 10px; }
-    .quiz-container h2 { color: #374151; font-size: clamp(16px, 2.8vw, 22px); }
-
-    #lives { display:flex; justify-content:center; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
-    .heart {
-      width: clamp(18px, 3.6vw, 28px); height: clamp(18px, 3.6vw, 28px);
-      background: radial-gradient(circle at 30% 30%, #ef4444, #b91c1c);
-      clip-path: path("M16 28C8 22 2 18 2 11C2 7 5 4 9 4C12 4 14 6 16 8C18 6 20 4 23 4C27 4 30 7 30 11C30 18 24 22 16 28Z");
-      filter: drop-shadow(0 1px 1px rgba(0,0,0,.25));
-    }
-    .heart.off { opacity:.25; filter: grayscale(.7); }
-    #mainProgress { background:#e5e7eb; border-radius:14px; overflow:hidden; height:20px; margin-bottom:8px; }
-    #mainBar { height:100%; width:0%; background: linear-gradient(90deg,#22c55e,#16a34a); transition:width .4s ease; }
-    #subBars { display:grid; grid-template-columns: 1fr 1fr; gap:8px 16px; margin-bottom:8px; }
-    .subProgress { background:#e5e7eb; border-radius:10px; height:14px; overflow:hidden; position:relative; cursor: pointer; }
-    .subBar { height:100%; width:0%; background: linear-gradient(90deg,#60a5fa,#2563eb); transition:width .4s ease; }
-    .subLabel { position:absolute; top:0; left:6px; font-size:12px; color:#fff; text-shadow:0 0 2px rgba(0,0,0,.5); line-height:14px; font-weight:600; }
-    .subProgress.prof-mode:hover { background: #f0f9ff; }
-    #question { font-size: clamp(16px, 3.5vw, 20px); margin: 12px 0 6px; text-align:center; }
-    #feedback { margin: 8px auto 0; text-align:center; min-height: 1.6em; font-weight: 700; }
-    #choices { display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin:8px auto; max-width:680px; }
-    .choice {
-      border:1px solid #d1d5db; border-radius:10px; padding:clamp(8px,2vw,12px); cursor:pointer;
-      background:#fff; text-align:center; transition: transform .08s, box-shadow .2s; font-size: clamp(14px, 2.8vw, 16px);
-    }
-    .choice:hover { box-shadow:0 5px 10px rgba(0,0,0,0.08); transform:translateY(-2px); }
-    .choice.correct { background:#dcfce7; border-color:#22c55e; }
-    .choice.wrong { background:#fee2e2; border-color:#ef4444; }
-    #freeInputZone { display:none; text-align:center; margin-top:8px; }
-    #answer { padding:8px; width:min(680px,90%); font-size:clamp(14px, 2.8vw, 16px); }
-    #submit { margin-top:8px; padding:10px 14px; background:#22c55e; color:#fff; border:0; border-radius:8px; cursor:pointer; }
-    #submit:hover { background:#16a34a; }
-    #arena {
-      position:relative; height:var(--arena-h); margin-top:10px;
-      background: linear-gradient(#f0f9ff, #e0f2fe);
-      border-radius:12px; overflow:hidden; box-shadow: inset 0 -6px 0 #cbd5e1;
-    }
-    #hero, #zombie, #projectile {
-      position:absolute; bottom:0; height:var(--char-h);
-      max-width:32vw; object-fit:contain; user-select:none; pointer-events:none;
-    }
-    #hero { left:min(3vw,24px); }
-    #zombie { right:min(3vw,24px); transition:right .08s linear; }
-    #projectile {
-      width:var(--proj-size); height:var(--proj-size);
-      background: radial-gradient(circle, #38bdf8 0%, #0284c7 80%);
-      border-radius:50%; display:none;
-      bottom: calc(var(--char-h) * 0.55); 
-    }
-    #overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:50; color:#fff; text-align:center; padding:20px; }
-    #overlay .panel{ background:#0f172a; border-radius:16px; padding:20px; width:min(520px,92%); box-shadow:0 20px 60px rgba(0,0,0,.4); }
-    #overlay h3{ margin:0 0 8px; font-size:clamp(18px, 4.6vw, 26px); }
-    #overlay button{ margin-top:8px; padding:10px 16px; border:0; border-radius:10px; cursor:pointer; background:#22c55e; color:#fff; }
-    #correctionOverlay {
-        position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); display: none; 
-        align-items: center; justify-content: center; z-index: 60; color: #fff; 
-        text-align: center; padding: 20px;
-    }
-    #correctionOverlay .correction-box {
-        background: #fee2e2; color: #b91c1c; border-radius: 20px; padding: 40px; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: min(600px, 95%);
-    }
-    #correctionOverlay h2 { font-size: clamp(24px, 6vw, 40px); margin-bottom: 10px; color: #b91c1c; }
-    #correctionOverlay p { font-size: clamp(18px, 4vw, 30px); font-weight: bold; margin-top: 0; }
-    .prof-badge {
-      background: #f59e0b; color: white;
-      padding: 4px 8px; border-radius: 6px;
-      font-size: 12px; font-weight: bold;
-    }
-    #profGameControls {
-      display: none;
-      background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px;
-      padding: 12px; margin: 12px auto; max-width: 680px;
-      text-align: center;
-    }
-    #profGameControls button {
-      width: auto; padding: 8px 12px; font-size: 13px; margin: 4px;
-    }
+    /* ... (VOS STYLES RESTENT INCHANGÉS) ... */
+    :root{--bg:#f8fafc;--card:#fff;--primary:#2563eb;--ok:#16a34a;--warn:#ef4444;--text:#111827;--muted:#6b7280;--shadow:0 10px 25px rgba(0,0,0,.08);--arena-h:clamp(180px,36vh,320px);--char-h:clamp(90px,26vh,200px);--proj-size:clamp(18px,3vh,28px)}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);background:linear-gradient(#e0f2fe,var(--bg));min-height:100dvh;display:flex;flex-direction:column}header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;background:#fff;box-shadow:var(--shadow);position:sticky;top:0;z-index:20}header h1{font-size:18px;margin:0}#studentBadge{font-size:14px;color:var(--muted)}#logoutBtn{background:#94a3b8!important;color:#fff;padding:6px 10px!important;font-size:14px!important;width:auto!important}#logoutBtn:hover{background:#64748b!important}.wrap{max-width:960px;width:100%;margin:24px auto;padding:0 16px;flex:1}.card{background:var(--card);box-shadow:var(--shadow);border-radius:14px;padding:20px}.form{display:grid;grid-template-columns:1fr;gap:12px;margin-top:10px}label{font-size:14px;color:var(--muted)}input,select,button{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #d1d5db;font-size:16px;outline:none;transition:box-shadow .2s,transform .02s;background:#fff}input:focus,select:focus{box-shadow:0 0 0 3px rgba(37,99,235,.2);border-color:#93c5fd}button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:600}button:hover{filter:brightness(1.05)}button:active{transform:translateY(1px)}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.hint{color:var(--muted);font-size:13px;margin-top:6px}.error{color:var(--warn);font-weight:600;margin-top:8px}.ok{color:var(--ok);font-weight:600;margin-top:8px}#game{display:none;margin-top:18px}#playersTable th{font-weight:600;padding:10px;border-bottom:1px solid #e2e8f0;text-align:left}#playersTable td{padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}.player-finished td{background-color:#f0fdf4!important;color:#166534}.player-finished strong{color:#15803d}#recentPlayers tr:nth-child(even):not(.player-finished){background-color:#f8fafc}.action-btn{padding:5px 9px!important;font-size:12px!important;width:auto!important;margin:2px;border-radius:6px}.reset-btn{background:#fee2e2!important;color:#b91c1c}.reset-btn:hover{background:#fecaca!important}.impersonate-btn{background:#e0e7ff!important;color:#3730a3}.impersonate-btn:hover{background:#c7d2fe!important}.questions-list{display:flex;gap:4px;flex-wrap:wrap;margin:4px 0}.question-indicator{width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:1px solid #e5e7eb}.question-valid{background:#dcfce7;color:#16a34a;border-color:#22c55e}.question-invalid{background:#fef2f2;color:#ef4444;border-color:#fecaca}@media (max-width:640px){.row{grid-template-columns:1fr}}.quiz-container{padding:0;box-shadow:none}.quiz-container h1,.quiz-container h2{text-align:center;margin:4px 0 10px}.quiz-container h2{color:#374151;font-size:clamp(16px,2.8vw,22px)}#lives{display:flex;justify-content:center;gap:6px;margin-bottom:8px;flex-wrap:wrap}.heart{width:clamp(18px,3.6vw,28px);height:clamp(18px,3.6vw,28px);background:radial-gradient(circle at 30% 30%,#ef4444,#b91c1c);clip-path:path("M16 28C8 22 2 18 2 11C2 7 5 4 9 4C12 4 14 6 16 8C18 6 20 4 23 4C27 4 30 7 30 11C30 18 24 22 16 28Z");filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}.heart.off{opacity:.25;filter:grayscale(.7)}#mainProgress{background:#e5e7eb;border-radius:14px;overflow:hidden;height:20px;margin-bottom:8px}#mainBar{height:100%;width:0;background:linear-gradient(90deg,#22c55e,#16a34a);transition:width .4s ease}#subBars{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:8px}.subProgress{background:#e5e7eb;border-radius:10px;height:14px;overflow:hidden;position:relative;cursor:pointer}.subBar{height:100%;width:0;background:linear-gradient(90deg,#60a5fa,#2563eb);transition:width .4s ease}.subLabel{position:absolute;top:0;left:6px;font-size:12px;color:#fff;text-shadow:0 0 2px rgba(0,0,0,.5);line-height:14px;font-weight:600}.subProgress.prof-mode:hover{background:#f0f9ff}#question{font-size:clamp(16px,3.5vw,20px);margin:12px 0 6px;text-align:center}#feedback{margin:8px auto 0;text-align:center;min-height:1.6em;font-weight:700}#choices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px auto;max-width:680px}.choice{border:1px solid #d1d5db;border-radius:10px;padding:clamp(8px,2vw,12px);cursor:pointer;background:#fff;text-align:center;transition:transform .08s,box-shadow .2s;font-size:clamp(14px,2.8vw,16px)}.choice:hover{box-shadow:0 5px 10px rgba(0,0,0,.08);transform:translateY(-2px)}.choice.correct{background:#dcfce7;border-color:#22c55e}.choice.wrong{background:#fee2e2;border-color:#ef4444}#freeInputZone{display:none;text-align:center;margin-top:8px}#answer{padding:8px;width:min(680px,90%);font-size:clamp(14px,2.8vw,16px)}#submit{margin-top:8px;padding:10px 14px;background:#22c55e;color:#fff;border:0;border-radius:8px;cursor:pointer}#submit:hover{background:#16a34a}#arena{position:relative;height:var(--arena-h);margin-top:10px;background:linear-gradient(#f0f9ff,#e0f2fe);border-radius:12px;overflow:hidden;box-shadow:inset 0 -6px 0 #cbd5e1}#hero,#zombie,#projectile{position:absolute;bottom:0;height:var(--char-h);max-width:32vw;object-fit:contain;-webkit-user-select:none;user-select:none;pointer-events:none}#hero{left:min(3vw,24px)}#zombie{right:min(3vw,24px);transition:right .08s linear}#projectile{width:var(--proj-size);height:var(--proj-size);background:radial-gradient(circle,#38bdf8 0%,#0284c7 80%);border-radius:50%;display:none;bottom:calc(var(--char-h)*.55)}#overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:50;color:#fff;text-align:center;padding:20px}#overlay .panel{background:#0f172a;border-radius:16px;padding:20px;width:min(520px,92%);box-shadow:0 20px 60px rgba(0,0,0,.4)}#overlay h3{margin:0 0 8px;font-size:clamp(18px,4.6vw,26px)}#overlay button{margin-top:8px;padding:10px 16px;border:0;border-radius:10px;cursor:pointer;background:#22c55e;color:#fff}#correctionOverlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:60;color:#fff;text-align:center;padding:20px}#correctionOverlay .correction-box{background:#fee2e2;color:#b91c1c;border-radius:20px;padding:40px;box-shadow:0 10px 30px rgba(0,0,0,.5);width:min(600px,95%)}#correctionOverlay h2{font-size:clamp(24px,6vw,40px);margin-bottom:10px;color:#b91c1c}#correctionOverlay p{font-size:clamp(18px,4vw,30px);font-weight:700;margin-top:0}.prof-badge{background:#f59e0b;color:#fff;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:700}#profGameControls{display:none;background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px;margin:12px auto;max-width:680px;text-align:center}#profGameControls button{width:auto;padding:8px 12px;font-size:13px;margin:4px}
   </style>
 </head>
 <body>
@@ -228,8 +44,8 @@
 
     <section id="game">
       <div class="card quiz-container">
-        <h1>🎮 Quiz – Les deux empires 🏰</h1>
-        <h2 id="levelTitle">Niveau 1 : repères</h2>
+        <h1>🎮 Quiz</h1>
+        <h2 id="levelTitle"></h2>
         <div id="profModeIndicator" style="display: none; text-align: center; margin-bottom: 10px;"></div>
         <p class="hint" id="welcomeText" style="text-align:center;"></p>
 
@@ -283,6 +99,7 @@
   <div id="correctionOverlay"><div class="correction-box"><h2>❌ Erreur ! La bonne réponse était :</h2><p id="correctionText"></p><button id="closeCorrectionBtn">Continuer</button></div></div>
 
   <script>
+    // --- SECTION 0: UI Références & State ---
     const $ = (sel) => document.querySelector(sel);
     const studentBadge = $("#studentBadge"), form = $("#registerForm"), formMsg = $("#formMsg"), registerCard = $("#registerCard");
     const game = $("#game"), startBtn = $("#startBtn"), recentPlayersSection = $("#recentPlayers"), playersBody = $("#playersBody");
@@ -292,6 +109,10 @@
     let isProfessorMode = false, isImpersonating = false, impersonatedPlayer = null;
     const saved = JSON.parse(localStorage.getItem("player") || "null");
     let currentPlayerId = saved ? saved.id : null; 
+    let levels = [], questionsLoaded = false;
+    let allQuestionsData = {}; // Pour stocker toutes les questions pour le prof
+
+    // --- SECTION 1: Logique de connexion et d'affichage ---
 
     function showStudent(stu) {
       studentBadge.textContent = `${stu.firstName} ${stu.lastName} – ${stu.classroom}`;
@@ -315,27 +136,71 @@
     }
     logoutBtn.addEventListener('click', logout);
 
-    let levels = [], questionsLoaded = false;
-    async function loadQuestions() {
-      if (questionsLoaded) return;
-      try {
-        const res = await fetch('/questions.json');
-        if (!res.ok) throw new Error('Impossible de charger les questions.');
-        levels = await res.json(); questionsLoaded = true;
-      } catch (err) { console.error('Erreur de chargement des questions :', err); }
+    // NOUVELLE FONCTION : Détermine la clé de classe ('6e', '5e', '2de')
+    function getClassKey(classroom) {
+        const cls = classroom.toUpperCase();
+        if (cls.startsWith('6')) return '6e';
+        if (cls.startsWith('5')) return '5e';
+        if (cls.startsWith('2')) return '2de';
+        return null; // Pour 'Professeur' ou autres cas
     }
 
-    if (saved && saved.id) {
-        showStudent(saved);
-        if (saved.id === 'prof') {
-            isProfessorMode = true; registerCard.style.display = "none"; recentPlayersSection.style.display = "block";
-            loadQuestions().then(() => fetchPlayers(true));
-        } else { hideFormShowGame(); }
-    } else { showForm(); }
+    // MODIFIÉE : Charge les questions pour une classe spécifique
+    async function loadQuestions(classroom) {
+      if (questionsLoaded) return;
+      const classKey = getClassKey(classroom);
+      if (!classKey) {
+          console.log("Pas de questions à charger pour cette classe.");
+          return;
+      }
+      try {
+        const res = await fetch(`/questions/${classKey}`);
+        if (!res.ok) throw new Error(`Impossible de charger les questions pour ${classKey}.`);
+        levels = await res.json();
+        questionsLoaded = true;
+      } catch (err) {
+        console.error('Erreur de chargement des questions :', err);
+        alert("Erreur critique: Impossible de charger les questions du quiz.");
+      }
+    }
+
+    // NOUVELLE FONCTION : Charge TOUTES les questions pour la vue du professeur
+    async function loadAllQuestionsForProf() {
+        const classKeys = ['6e', '5e', '2de'];
+        try {
+            const promises = classKeys.map(key => fetch(`/questions/${key}`).then(res => res.json()));
+            const results = await Promise.all(promises);
+            allQuestionsData = {
+                '6e': results[0],
+                '5e': results[1],
+                '2de': results[2]
+            };
+            // On charge un set par défaut dans 'levels' pour les fonctions qui en dépendent
+            levels = allQuestionsData['5e']; 
+        } catch (err) {
+            console.error("Erreur lors du chargement de toutes les questions pour le prof :", err);
+        }
+    }
     
-    window.addEventListener("load", async () => {
-        if (saved && saved.id && saved.id !== 'prof') { await loadQuestions(); initQuiz(); }
-    });
+    // Logique de chargement initial
+    (async () => {
+        if (saved && saved.id) {
+            showStudent(saved);
+            if (saved.id === 'prof') {
+                isProfessorMode = true;
+                registerCard.style.display = "none";
+                recentPlayersSection.style.display = "block";
+                await loadAllQuestionsForProf();
+                fetchPlayers(true);
+            } else {
+                hideFormShowGame();
+                await loadQuestions(saved.classroom);
+                initQuiz();
+            }
+        } else {
+            showForm();
+        }
+    })();
 
     form?.addEventListener("submit", async (e) => {
       e.preventDefault(); formMsg.textContent = ""; startBtn.disabled = true;
@@ -346,9 +211,9 @@
 
       if (formData.lastName.toLowerCase() === "vuillet" && formData.firstName.toLowerCase() === "jean" && formData.classroom.toLowerCase() === "professeur") {
           const profInfo = { id: 'prof', ...formData };
-          localStorage.setItem("player", JSON.stringify(profInfo)); currentPlayerId = 'prof'; isProfessorMode = true;
-          showStudent(profInfo); registerCard.style.display = "none"; recentPlayersSection.style.display = "block";
-          await loadQuestions(); fetchPlayers(true); startBtn.disabled = false; return;
+          localStorage.setItem("player", JSON.stringify(profInfo));
+          window.location.reload(); // On recharge la page en mode prof
+          return;
       }
       
       try {
@@ -356,30 +221,35 @@
           const data = await res.json();
           if (!res.ok || !data.ok) throw new Error(data.error || "Erreur d'inscription.");
           const player = { id: data.id, ...data };
-          localStorage.setItem("player", JSON.stringify(player)); currentPlayerId = player.id;
-          showStudent(player); hideFormShowGame(); await loadQuestions(); initQuiz();
+          localStorage.setItem("player", JSON.stringify(player));
+          showStudent(player);
+          hideFormShowGame();
+          await loadQuestions(player.classroom);
+          initQuiz();
       } catch (err) { formMsg.textContent = "❌ " + err.message; } 
       finally { startBtn.disabled = false; }
     });
 
     testGameBtn.addEventListener('click', async () => {
         isImpersonating = false; impersonatedPlayer = null; hideFormShowGame();
-        profModeIndicator.innerHTML = `<span class="prof-badge">🎮 MODE TEST PROFESSEUR</span>`;
+        profModeIndicator.innerHTML = `<span class="prof-badge">🎮 MODE TEST PROFESSEUR (5e)</span>`;
         profModeIndicator.style.display = "block";
         profGameControls.style.display = 'none';
-        await loadQuestions(); initQuiz();
+        levels = allQuestionsData['5e']; // On charge les questions 5e pour le test
+        questionsLoaded = true;
+        initQuiz();
     });
 
-    let allPlayersData = [], isSorted = false;
-
+    // --- SECTION 2: Logique du tableau de bord professeur ---
+    
+    let isSorted = false;
     function renderPlayers(playersToRender) {
         playersBody.innerHTML = '';
-        if (playersToRender.length === 0) {
-            playersBody.innerHTML = `<tr><td colspan="5">Aucun étudiant inscrit.</td></tr>`; return;
-        }
-
+        if (playersToRender.length === 0) { playersBody.innerHTML = `<tr><td colspan="5">Aucun étudiant inscrit.</td></tr>`; return; }
         playersToRender.forEach(player => {
-            const isFinished = levels.length > 0 && player.validatedLevels.length >= levels.length;
+            const classKey = getClassKey(player.classroom);
+            const playerLevels = allQuestionsData[classKey] || [];
+            const isFinished = playerLevels.length > 0 && player.validatedLevels.length >= playerLevels.length;
             const rowClass = isFinished ? 'class="player-finished"' : '';
             const niveauxValides = player.validatedLevels.length > 0 ? player.validatedLevels.join(', ').replace(/niveau/g, 'N.') : '-';
             const playerJson = encodeURIComponent(JSON.stringify(player));
@@ -394,21 +264,22 @@
                         <button class="action-btn impersonate-btn" data-player-info='${playerJson}'>Tester en tant que</button>
                         <button class="action-btn reset-btn" data-player-id="${player._id}" data-player-name="${player.firstName} ${player.lastName}">Réinitialiser</button>
                     </td>
-                </tr>
-            `;
+                </tr>`;
             playersBody.insertAdjacentHTML('beforeend', row);
         });
     }
 
     function generateQuestionsList(player) {
-        if (!levels || levels.length === 0) return `<strong>${player.validatedQuestions.length}</strong>q.`;
-        const currentLevelIndex = player.validatedLevels.length;
-        if (currentLevelIndex >= levels.length) return `<div style="font-weight: bold;">🏆 Tous les niveaux terminés !</div>`;
+        const classKey = getClassKey(player.classroom);
+        const playerLevels = allQuestionsData[classKey];
+        if (!playerLevels) return `<strong>${player.validatedQuestions.length}</strong>q.`;
 
-        const currentLevel = levels[currentLevelIndex];
+        const currentLevelIndex = player.validatedLevels.length;
+        if (currentLevelIndex >= playerLevels.length) return `<div style="font-weight: bold;">🏆 Tous les niveaux terminés !</div>`;
+
+        const currentLevel = playerLevels[currentLevelIndex];
         const totalQuestions = currentLevel.questions.length;
         let html = `<div style="font-size: 11px; margin-bottom: 4px;">En cours : <strong>${currentLevel.title}</strong></div><div class="questions-list">`;
-
         for (let i = 0; i < totalQuestions; i++) {
             const questionId = `${currentLevel.id}-${i}`;
             const isValid = player.validatedQuestions.includes(questionId);
@@ -451,11 +322,8 @@
             const playerName = target.dataset.playerName;
             if (confirm(`Voulez-vous vraiment réinitialiser la progression de ${playerName} ?`)) {
                 try {
-                    const res = await fetch('/api/reset-player', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ playerId })
-                    });
-                    if (!res.ok) { const err = await res.json(); throw new Error(err.message || 'Échec de la réinitialisation.'); }
+                    const res = await fetch('/api/reset-player', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ playerId }) });
+                    if (!res.ok) { const err = await res.json(); throw new Error(err.message || 'Échec.'); }
                     await fetchPlayers(true);
                 } catch (err) { alert('Erreur: ' + err.message); }
             }
@@ -478,11 +346,12 @@
 
     async function startImpersonation(playerData) {
         isImpersonating = true; impersonatedPlayer = playerData;
+        const classKey = getClassKey(playerData.classroom);
+        levels = allQuestionsData[classKey] || [];
         hideFormShowGame();
         profModeIndicator.innerHTML = `<span class="prof-badge">👤 TEST EN TANT QUE : ${playerData.firstName} ${playerData.lastName}</span>`;
         profModeIndicator.style.display = "block";
         profGameControls.style.display = "block";
-        await loadQuestions();
         setupGameForStudent(playerData);
     }
 
@@ -513,22 +382,14 @@
     }
     
     $('#profBackToDashboardBtn').addEventListener('click', exitImpersonation);
-
-    $('#profSkipLevelBtn').addEventListener('click', () => {
-        if (currentLevel < levels.length - 1) setupLevel(currentLevel + 1);
-        else feedback.textContent = "Dernier niveau atteint.";
-    });
-
+    $('#profSkipLevelBtn').addEventListener('click', () => { if (currentLevel < levels.length - 1) setupLevel(currentLevel + 1); });
     $('#profValidateLevelBtn').addEventListener('click', async () => {
         if (!impersonatedPlayer || currentLevel >= levels.length) return;
         const levelToValidate = levels[currentLevel];
-        
         impersonatedPlayer.validatedLevels.push(levelToValidate.id);
         levelToValidate.questions.forEach((q, i) => {
             const qId = `${levelToValidate.id}-${i}`;
-            if (!impersonatedPlayer.validatedQuestions.includes(qId)) {
-                impersonatedPlayer.validatedQuestions.push(qId);
-            }
+            if (!impersonatedPlayer.validatedQuestions.includes(qId)) impersonatedPlayer.validatedQuestions.push(qId);
         });
         await saveProgress('level', levelToValidate.id, impersonatedPlayer._id);
         for(let i = 0; i < levelToValidate.questions.length; i++) {
@@ -538,6 +399,8 @@
         setTimeout(() => { feedback.textContent = ""; setupGameForStudent(impersonatedPlayer); }, 1500);
     });
 
+    // --- SECTION 3: Logique principale du Quiz ---
+    
     let currentLevel = 0, localScores = [], general = 0, currentIndex = -1, locked = false;
     let lives = 4; const MAX_LIVES = 4;
     const ZOMBIE_TIME_SECS = 25, ZOMBIE_TIME_FINAL_SECS = 40, INTERVAL_MS = 20;
@@ -553,22 +416,13 @@
         const playerIdToSave = forPlayerId || currentPlayerId;
         if (!playerIdToSave || playerIdToSave === 'prof' || (isProfessorMode && !isImpersonating)) return;
         try {
-            const res = await fetch('/api/save-progress', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerId: playerIdToSave, progressType, value })
-            });
+            const res = await fetch('/api/save-progress', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ playerId: playerIdToSave, progressType, value }) });
             if (!res.ok) throw new Error('Échec de la sauvegarde.');
         } catch (error) { console.error("❌ Échec de la sauvegarde:", error); }
     }
 
-    function initQuiz() { setupLevel(0); }
-
-    function renderLives(){
-        livesWrap.innerHTML="";
-        for(let i=0;i<MAX_LIVES;i++){
-            const h=document.createElement("div"); h.className="heart"+(i<lives?"":" off"); livesWrap.appendChild(h);
-        }
-    }
+    function initQuiz() { if (levels.length > 0) setupLevel(0); }
+    function renderLives(){ livesWrap.innerHTML=""; for(let i=0;i<MAX_LIVES;i++){ const h=document.createElement("div"); h.className="heart"+(i<lives?"":" off"); livesWrap.appendChild(h); } }
 
     function setupLevel(idx){
       const lvl = levels[idx];
@@ -577,8 +431,7 @@
       general = 0; currentIndex = -1; lives = MAX_LIVES; renderLives();
       subBarsContainer.innerHTML = "";
       lvl.questions.forEach((_,i)=>{
-        const bar=document.createElement("div");
-        bar.className="subProgress" + (isProfessorMode ? " prof-mode" : "");
+        const bar=document.createElement("div"); bar.className="subProgress" + (isProfessorMode ? " prof-mode" : "");
         bar.innerHTML=`<div class="subBar" id="subBar${i}"></div><div class="subLabel">${i + 1}</div>`;
         if (isProfessorMode) bar.addEventListener('click', () => handleBarClick(i));
         subBarsContainer.appendChild(bar);
@@ -589,8 +442,7 @@
     function handleBarClick(questionIndex) {
       if (locked) return;
       const lvl = levels[currentLevel], req = lvl.requiredPerQuestion;
-      const oldScore = localScores[questionIndex];
-      if (oldScore < req) {
+      if (localScores[questionIndex] < req) {
           localScores[questionIndex]++;
           if (localScores[questionIndex] >= req) general++;
           updateBars();
@@ -637,9 +489,7 @@
         renderQuestion();
         
         const isInteractiveMode = !isProfessorMode || isImpersonating;
-        if (isInteractiveMode) {
-            startZombie();
-        }
+        if (isInteractiveMode) startZombie();
     }
 
     function renderQuestion() {
@@ -664,7 +514,6 @@
 
     function onChoiceClick(elt, opt, q) {
         if (locked || (isProfessorMode && !isImpersonating)) return;
-        
         const ok = isCorrectOption(opt, q); locked = true;
         if (ok) {
             elt.classList.add("correct"); feedback.textContent = "✅ Bonne réponse !";
@@ -683,7 +532,6 @@
 
     submitBtn.addEventListener("click", () => {
         if (locked || (isProfessorMode && !isImpersonating)) return;
-
         const q = levels[currentLevel].questions[currentIndex];
         const ok = isCorrectFreeInput(q, inputElt.value); locked = true;
         if (ok) {
@@ -701,7 +549,6 @@
 
     function wrongAnswerFlow(q) {
         if (isProfessorMode && !isImpersonating) return;
-
         stopZombie();
         if (freeInputZone.style.display === "none") {
             localScores[currentIndex] = Math.max(0, localScores[currentIndex] - 1); updateBars();
@@ -717,10 +564,7 @@
         localScores[currentIndex] = Math.min(req, localScores[currentIndex] + v);
         if (oldScore < req && localScores[currentIndex] >= req) general++;
         updateBars();
-        
-        if (final && !isProfessorMode) {
-            saveProgress('question', levels[currentLevel].id + '-' + currentIndex);
-        }
+        if (final && !isProfessorMode) saveProgress('question', levels[currentLevel].id + '-' + currentIndex);
     }
     
     function decreaseLives(){
@@ -757,11 +601,13 @@
       },INTERVAL_MS);
     }
 
+    // Gèle le mouvement du zombie sans le réinitialiser
     function pauseZombieMovement() {
         if(zombieInterval) clearInterval(zombieInterval);
         zombieInterval = null;
     }
 
+    // Réinitialise complètement le zombie
     function stopZombie(){
       pauseZombieMovement();
       zombiePosition = 20;
@@ -789,7 +635,7 @@
           projectileElt.style.display = "none";
           projectileElt.style.left = "0px";
 
-          zombieElt.style.display = 'none'; // Fait disparaître le zombie
+          zombieElt.style.display = 'none'; // Fait disparaître le zombie à l'impact
           zombiePaused = false;
         }
       }, INTERVAL_MS);
