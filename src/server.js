@@ -13,7 +13,7 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 
 // ====== SERVIR LES FICHIERS STATIQUES =======
-// CORRIGÉ : On remonte d'un niveau pour trouver le dossier 'img'
+// CORRIGÉ : On remonte d'un niveau ('..') pour trouver le dossier 'img'
 app.use('/img', express.static(path.join(__dirname, '..', 'img')));
 
 const mongoUri = process.env.MONGODB_URI;
@@ -89,17 +89,35 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// ====== SAVE PROGRESS =======
+// ====== SAVE PROGRESS (AVEC DEBUG) =======
 app.post('/api/save-progress', async (req, res) => {
   try {
     const { playerId, progressType, value } = req.body;
+    console.log(`[SERVEUR] Demande reçue pour sauvegarder: ${progressType} = ${value} pour l'élève ID ${playerId}`);
     const player = await Player.findById(playerId);
-    if (!player) return res.status(404).json({ message: 'Joueur non trouvé.' });
-    if (progressType === 'level' && !player.validatedLevels.includes(value)) player.validatedLevels.push(value);
-    if (progressType === 'question' && !player.validatedQuestions.includes(value)) player.validatedQuestions.push(value);
-    await player.save();
-    return res.status(200).json({ message: 'Progression sauvegardée !' });
+    if (!player) {
+      console.log(`[SERVEUR] ERREUR: Joueur avec ID ${playerId} non trouvé.`);
+      return res.status(404).json({ message: 'Joueur non trouvé.' });
+    }
+    let updated = false;
+    if (progressType === 'level' && !player.validatedLevels.includes(value)) {
+      player.validatedLevels.push(value);
+      updated = true;
+    }
+    if (progressType === 'question' && !player.validatedQuestions.includes(value)) {
+      player.validatedQuestions.push(value);
+      updated = true;
+    }
+    if (updated) {
+        await player.save();
+        console.log(`[SERVEUR] ✅ Progression de ${player.firstName} ${player.lastName} MISE À JOUR.`);
+        console.log(`   --> Questions validées: [${player.validatedQuestions.join(', ')}]`);
+    } else {
+        console.log(`[SERVEUR] 🤷 Progression déjà à jour pour ${player.firstName}. Aucune modification.`);
+    }
+    return res.status(200).json({ message: 'Progression traitée.' });
   } catch (err) {
+    console.error('[SERVEUR] ❌ ERREUR CRITIQUE lors de la sauvegarde:', err);
     res.status(500).json({ message: 'Erreur serveur.' });
   }
 });
@@ -109,9 +127,7 @@ app.get('/api/players', async (req, res) => {
   try {
     const players = await Player.find().sort({ created_at: -1 });
     res.status(200).json(players);
-  } catch (err) {
-    res.status(500).json({ message: 'Erreur serveur.' });
-  }
+  } catch (err) { res.status(500).json({ message: 'Erreur serveur.' }); }
 });
 
 // ====== ROUTES DE RESET =======
@@ -135,7 +151,7 @@ app.get('/questions/:classKey', (req, res) => {
   const { classKey } = req.params;
   const allowedKeys = ['6e', '5e', '2de'];
   if (allowedKeys.includes(classKey)) {
-    // CORRIGÉ : On remonte d'un niveau pour trouver les fichiers JSON
+    // CORRIGÉ : On remonte d'un niveau ('..') pour trouver les fichiers JSON
     const filePath = path.join(__dirname, '..', `questions-${classKey}.json`);
     res.sendFile(filePath, (err) => {
       if (err) res.status(404).json({ message: `Fichier de questions non trouvé.` });
@@ -145,10 +161,9 @@ app.get('/questions/:classKey', (req, res) => {
   }
 });
 
-
 // ====== SERVE INDEX =======
 app.get('/', (req, res) => {
-  // CORRIGÉ : On remonte d'un niveau pour trouver index.html
+  // CORRIGÉ : On remonte d'un niveau ('..') pour trouver index.html
   res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 

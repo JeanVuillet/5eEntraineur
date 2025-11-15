@@ -1,11 +1,8 @@
 [
   {
+    "id": "niveau1-5e",
     "title": "Niveau 1 : repères",
-    "id": "Niveau 1",
-    "placeholder": "Écris la réponse (dernier palier)",
     "requiredPerQuestion": 3,
-    "startScore": 0,
-    "wrongPenaltyInput": 1,
     "questions": [
       {
         "q": "Quel empire se trouve à l'Ouest de l'Europe au début du Moyen Âge ?",
@@ -20,7 +17,6 @@
       {
         "q": "Quelle est la capitale de l'Empire carolingien ?",
         "a": "Aix-la-Chapelle",
-        "acceptable": ["aix la chapelle", "aix-la-chapelle", "aix la Chapelle"],
         "options": ["Aix-la-Chapelle", "Aixe-la-chapelle", "Rome", "Constantinople"]
       },
       {
@@ -41,12 +37,9 @@
     ]
   },
   {
+    "id": "niveau2-5e",
     "title": "Niveau 2 : Les grandes dates",
-    "id": "Niveau 2",
-    "placeholder": "Écris la réponse (dernier palier)",
     "requiredPerQuestion": 3,
-    "startScore": 0,
-    "wrongPenaltyInput": 1,
     "questions": [
       {
         "q": "En quelle année Charlemagne a-t-il été couronné empereur ?",
@@ -76,17 +69,14 @@
     ]
   },
   {
+    "id": "niveau3-5e",
     "title": "Niveau 3 : Églises d'Orient et d'Occident",
-    "id": "Niveau 3",
-    "placeholder": "Écris la réponse (dernier palier)",
     "requiredPerQuestion": 3,
-    "startScore": 0,
-    "wrongPenaltyInput": 1,
     "questions": [
       {
         "q": "Quelle est la langue de la liturgie catholique ?",
         "a": "latin",
-        "options": ["grec", "hébreu", "français", "allemand"]
+        "options": ["grec", "hébreu", "français", "latin"]
       },
       {
         "q": "Les prêtres catholiques doivent-ils être ?",

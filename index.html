@@ -21,8 +21,9 @@
   <main class="wrap">
     <section id="registerCard" class="card">
       <h2>👋 Avant de commencer</h2>
-      <p class="hint">Entre ton <strong>prénom</strong>, <strong>nom</strong> et sélectionne ta <strong>classe</strong>.</p>
+      
       <form id="registerForm" class="form" autocomplete="on">
+        <p class="hint">Entre ton <strong>prénom</strong>, <strong>nom</strong> et sélectionne ta <strong>classe</strong>.</p>
         <div class="row">
           <div><label for="firstName">Prénom</label><input id="firstName" name="firstName" placeholder="Ex : Jeanne" required /></div>
           <div><label for="lastName">Nom</label><input id="lastName" name="lastName" placeholder="Ex : Martin" required /></div>
@@ -30,16 +31,33 @@
         <div class="row">
           <div>
             <label for="classroom">Classe</label>
-            <select id="classroom" name="classroom" required>
+            <select id="classroom" name="classroom">
               <option value="" disabled selected>Choisis ta classe...</option>
-              <option value="6D">6eD</option><option value="5B">5eB</option><option value="5C">5eC</option>
-              <option value="2A">2de A</option><option value="2CD">2de CD</option><option value="Professeur">Professeur</option>
+              <option value="6D">6eD</option>
+              <option value="5B">5eB</option>
+              <option value="5C">5eC</option>
+              <option value="2A">2de A</option>
+              <option value="2CD">2de CD</option>
            </select>
           </div>
           <div><label>&nbsp;</label><button id="startBtn" type="submit">Commencer</button></div>
         </div>
         <div id="formMsg" class="hint"></div>
       </form>
+
+      <div id="profPasswordModal" style="display: none;">
+        <h4 style="margin-top:0;">🔐 Accès Professeur</h4>
+        <p class="hint">Veuillez entrer le mot de passe.</p>
+        <div class="form">
+            <div>
+                <label for="profPassword">Mot de passe</label>
+                <input type="password" id="profPassword" placeholder="••••••••••" />
+            </div>
+            <div id="profPasswordMsg" class="error" style="margin-bottom: 8px;"></div>
+            <button id="validateProfPasswordBtn">Valider</button>
+        </div>
+      </div>
+
     </section>
 
     <section id="game">
@@ -75,9 +93,17 @@
     <section id="recentPlayers" class="card" style="margin-top: 24px; display: none;"> 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
         <h2>📈 Tableau des élèves</h2>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <button id="testGameBtn" style="width: auto; padding: 8px 12px; font-size: 14px; background: #f59e0b;">🎮 Test Game</button>
-          <button id="groupBtn" style="width: auto; padding: 8px 12px; font-size: 14px;">Trier par Classe</button>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          <select id="classFilter" class="action-btn" style="width: auto; font-size: 14px; padding: 8px 12px!important; height: 37px; border-color: #d1d5db;">
+            <option value="all">Filtrer par classe...</option>
+            <option value="all">Toutes les classes</option>
+            <option value="6D">6eD</option>
+            <option value="5B">5eB</option>
+            <option value="5C">5eC</option>
+            <option value="2A">2de A</option>
+            <option value="2CD">2de CD</option>
+          </select>
+          <button id="testGameBtn" style="width: auto; padding: 8px 12px; font-size: 14px; background: #f59e0b;">🎮 Test Game (Local)</button>
           <button id="resetAllBtn" style="width: auto; padding: 8px 12px; font-size: 14px; background: var(--warn);">⚠️ Tout Réinitialiser</button>
         </div>
       </div>
@@ -103,14 +129,16 @@
     const $ = (sel) => document.querySelector(sel);
     const studentBadge = $("#studentBadge"), form = $("#registerForm"), formMsg = $("#formMsg"), registerCard = $("#registerCard");
     const game = $("#game"), startBtn = $("#startBtn"), recentPlayersSection = $("#recentPlayers"), playersBody = $("#playersBody");
-    const groupBtn = $("#groupBtn"), logoutBtn = $("#logoutBtn"), testGameBtn = $("#testGameBtn"), profModeIndicator = $("#profModeIndicator");
+    const classFilter = $("#classFilter"), logoutBtn = $("#logoutBtn"), testGameBtn = $("#testGameBtn"), profModeIndicator = $("#profModeIndicator");
     const resetAllBtn = $("#resetAllBtn"), profGameControls = $("#profGameControls");
+    const profPasswordModal = $('#profPasswordModal'), profPasswordInput = $('#profPassword'), validateProfPasswordBtn = $('#validateProfPasswordBtn'), profPasswordMsg = $('#profPasswordMsg');
 
     let isProfessorMode = false, isImpersonating = false, impersonatedPlayer = null;
     const saved = JSON.parse(localStorage.getItem("player") || "null");
     let currentPlayerId = saved ? saved.id : null; 
     let levels = [], questionsLoaded = false;
-    let allQuestionsData = {}; // Pour stocker toutes les questions pour le prof
+    let allPlayersData = [];
+    let allQuestionsData = {};
 
     // --- SECTION 1: Logique de connexion et d'affichage ---
 
@@ -131,58 +159,41 @@
     
     function logout() {
         if(isImpersonating) exitImpersonation();
-        localStorage.removeItem("player"); currentPlayerId = null; isProfessorMode = false;
+        localStorage.removeItem("player");
+        localStorage.removeItem("profTestData");
         window.location.href = '/';      
     }
     logoutBtn.addEventListener('click', logout);
 
-    // NOUVELLE FONCTION : Détermine la clé de classe ('6e', '5e', '2de')
     function getClassKey(classroom) {
         const cls = classroom.toUpperCase();
         if (cls.startsWith('6')) return '6e';
         if (cls.startsWith('5')) return '5e';
         if (cls.startsWith('2')) return '2de';
-        return null; // Pour 'Professeur' ou autres cas
+        return null;
     }
 
-    // MODIFIÉE : Charge les questions pour une classe spécifique
     async function loadQuestions(classroom) {
-      if (questionsLoaded) return;
+      questionsLoaded = false;
       const classKey = getClassKey(classroom);
-      if (!classKey) {
-          console.log("Pas de questions à charger pour cette classe.");
-          return;
-      }
+      if (!classKey) return;
       try {
         const res = await fetch(`/questions/${classKey}`);
-        if (!res.ok) throw new Error(`Impossible de charger les questions pour ${classKey}.`);
-        levels = await res.json();
-        questionsLoaded = true;
+        if (!res.ok) throw new Error();
+        levels = await res.json(); questionsLoaded = true;
       } catch (err) {
-        console.error('Erreur de chargement des questions :', err);
         alert("Erreur critique: Impossible de charger les questions du quiz.");
       }
     }
 
-    // NOUVELLE FONCTION : Charge TOUTES les questions pour la vue du professeur
     async function loadAllQuestionsForProf() {
-        const classKeys = ['6e', '5e', '2de'];
         try {
-            const promises = classKeys.map(key => fetch(`/questions/${key}`).then(res => res.json()));
-            const results = await Promise.all(promises);
-            allQuestionsData = {
-                '6e': results[0],
-                '5e': results[1],
-                '2de': results[2]
-            };
-            // On charge un set par défaut dans 'levels' pour les fonctions qui en dépendent
+            const results = await Promise.all(['6e', '5e', '2de'].map(key => fetch(`/questions/${key}`).then(res => res.json())));
+            allQuestionsData = { '6e': results[0], '5e': results[1], '2de': results[2] };
             levels = allQuestionsData['5e']; 
-        } catch (err) {
-            console.error("Erreur lors du chargement de toutes les questions pour le prof :", err);
-        }
+        } catch (err) { console.error("Erreur chargement questions prof :", err); }
     }
     
-    // Logique de chargement initial
     (async () => {
         if (saved && saved.id) {
             showStudent(saved);
@@ -203,49 +214,78 @@
     })();
 
     form?.addEventListener("submit", async (e) => {
-      e.preventDefault(); formMsg.textContent = ""; startBtn.disabled = true;
-      const formData = { firstName: $("#firstName").value.trim(), lastName: $("#lastName").value.trim(), classroom: $("#classroom").value.trim() };
-      if (!formData.firstName || !formData.lastName || !formData.classroom) {
-        formMsg.textContent = "❗ Tous les champs sont obligatoires."; startBtn.disabled = false; return;
-      }
+        e.preventDefault();
+        formMsg.textContent = "";
+        startBtn.disabled = true;
 
-      if (formData.lastName.toLowerCase() === "vuillet" && formData.firstName.toLowerCase() === "jean" && formData.classroom.toLowerCase() === "professeur") {
-          const profInfo = { id: 'prof', ...formData };
-          localStorage.setItem("player", JSON.stringify(profInfo));
-          window.location.reload(); // On recharge la page en mode prof
-          return;
-      }
-      
-      try {
-          const res = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
-          const data = await res.json();
-          if (!res.ok || !data.ok) throw new Error(data.error || "Erreur d'inscription.");
-          const player = { id: data.id, ...data };
-          localStorage.setItem("player", JSON.stringify(player));
-          showStudent(player);
-          hideFormShowGame();
-          await loadQuestions(player.classroom);
-          initQuiz();
-      } catch (err) { formMsg.textContent = "❌ " + err.message; } 
-      finally { startBtn.disabled = false; }
+        const firstName = $("#firstName").value.trim();
+        const lastName = $("#lastName").value.trim();
+        
+        if (firstName.toLowerCase() === 'jean' && lastName.toLowerCase() === 'vuillet') {
+            form.style.display = 'none';
+            profPasswordModal.style.display = 'block';
+            profPasswordInput.focus();
+            startBtn.disabled = false;
+            return;
+        }
+
+        const classroom = $("#classroom").value;
+        if (!firstName || !lastName || !classroom) {
+            formMsg.textContent = "❗ Prénom, nom et classe sont obligatoires.";
+            startBtn.disabled = false;
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ firstName, lastName, classroom }) });
+            const data = await res.json();
+            if (!res.ok || !data.ok) throw new Error(data.error || "Erreur d'inscription.");
+            const player = { id: data.id, firstName, lastName, classroom };
+            localStorage.setItem("player", JSON.stringify(player));
+            showStudent(player);
+            hideFormShowGame();
+            await loadQuestions(player.classroom);
+            initQuiz();
+        } catch (err) {
+            formMsg.textContent = "❌ " + err.message;
+        } finally {
+            startBtn.disabled = false;
+        }
     });
 
-    testGameBtn.addEventListener('click', async () => {
-        isImpersonating = false; impersonatedPlayer = null; hideFormShowGame();
-        profModeIndicator.innerHTML = `<span class="prof-badge">🎮 MODE TEST PROFESSEUR (5e)</span>`;
-        profModeIndicator.style.display = "block";
-        profGameControls.style.display = 'none';
-        levels = allQuestionsData['5e']; // On charge les questions 5e pour le test
-        questionsLoaded = true;
-        initQuiz();
+    validateProfPasswordBtn.addEventListener('click', handleProfPasswordValidation);
+    profPasswordInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleProfPasswordValidation();
     });
+    function handleProfPasswordValidation() {
+        if (profPasswordInput.value === 'Clemenceau1919') {
+            localStorage.setItem("player", JSON.stringify({ id: 'prof', firstName: 'Jean', lastName: 'Vuillet', classroom: 'Professeur' }));
+            window.location.reload();
+        } else {
+            profPasswordMsg.textContent = 'Mot de passe incorrect.';
+        }
+    }
 
     // --- SECTION 2: Logique du tableau de bord professeur ---
     
-    let isSorted = false;
+    testGameBtn.addEventListener('click', async () => {
+        let profTestData = JSON.parse(localStorage.getItem('profTestData'));
+        if (!profTestData) {
+            profTestData = {
+                _id: 'prof-test', firstName: 'Professeur', lastName: 'Test',
+                classroom: '5B', validatedQuestions: [], validatedLevels: []
+            };
+        }
+        localStorage.setItem('profTestData', JSON.stringify(profTestData));
+        startImpersonation(profTestData, true);
+    });
+
     function renderPlayers(playersToRender) {
         playersBody.innerHTML = '';
-        if (playersToRender.length === 0) { playersBody.innerHTML = `<tr><td colspan="5">Aucun étudiant inscrit.</td></tr>`; return; }
+        if (playersToRender.length === 0) {
+            playersBody.innerHTML = `<tr><td colspan="5">Aucun étudiant pour cette classe.</td></tr>`;
+            return;
+        }
         playersToRender.forEach(player => {
             const classKey = getClassKey(player.classroom);
             const playerLevels = allQuestionsData[classKey] || [];
@@ -253,7 +293,6 @@
             const rowClass = isFinished ? 'class="player-finished"' : '';
             const niveauxValides = player.validatedLevels.length > 0 ? player.validatedLevels.join(', ').replace(/niveau/g, 'N.') : '-';
             const playerJson = encodeURIComponent(JSON.stringify(player));
-
             const row = `
                 <tr ${rowClass}>
                     <td><strong>${player.firstName} ${player.lastName}</strong></td>
@@ -272,11 +311,13 @@
     function generateQuestionsList(player) {
         const classKey = getClassKey(player.classroom);
         const playerLevels = allQuestionsData[classKey];
-        if (!playerLevels) return `<strong>${player.validatedQuestions.length}</strong>q.`;
-
+        if (!playerLevels) {
+            return `<strong>${player.validatedQuestions.length}</strong>q.`;
+        }
         const currentLevelIndex = player.validatedLevels.length;
-        if (currentLevelIndex >= playerLevels.length) return `<div style="font-weight: bold;">🏆 Tous les niveaux terminés !</div>`;
-
+        if (currentLevelIndex >= playerLevels.length) {
+            return `<div style="font-weight: bold;">🏆 Tous les niveaux terminés !</div>`;
+        }
         const currentLevel = playerLevels[currentLevelIndex];
         const totalQuestions = currentLevel.questions.length;
         let html = `<div style="font-size: 11px; margin-bottom: 4px;">En cours : <strong>${currentLevel.title}</strong></div><div class="questions-list">`;
@@ -294,7 +335,7 @@
         if (!isProf) return;
         playersBody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Chargement...</td></tr>`;
         try {
-            const response = await fetch('/api/players'); 
+            const response = await fetch('/api/players', { cache: 'no-cache' });
             if (!response.ok) throw new Error(`Erreur réseau (${response.status}).`);
             allPlayersData = await response.json(); 
             renderPlayers(allPlayersData); 
@@ -303,16 +344,14 @@
         }
     }
 
-    groupBtn.addEventListener('click', () => {
-        if (isSorted) {
-             renderPlayers([...allPlayersData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
-             groupBtn.textContent = "Trier par Classe";
-        } else {
-            const sorted = [...allPlayersData].sort((a, b) => a.classroom.localeCompare(b.classroom) || a.lastName.localeCompare(b.lastName));
-            renderPlayers(sorted);
-            groupBtn.textContent = "Annuler le tri";
+    classFilter.addEventListener('change', () => {
+        const selectedClass = classFilter.value;
+        let playersToShow = [...allPlayersData];
+        if (selectedClass !== 'all') {
+            playersToShow = allPlayersData.filter(player => player.classroom === selectedClass);
         }
-        isSorted = !isSorted;
+        playersToShow.sort((a, b) => a.lastName.localeCompare(b.lastName));
+        renderPlayers(playersToShow);
     });
 
     playersBody.addEventListener('click', async (e) => {
@@ -320,7 +359,7 @@
         if (target.matches('.reset-btn')) {
             const playerId = target.dataset.playerId;
             const playerName = target.dataset.playerName;
-            if (confirm(`Voulez-vous vraiment réinitialiser la progression de ${playerName} ?`)) {
+            if (confirm(`Vraiment réinitialiser ${playerName} ?`)) {
                 try {
                     const res = await fetch('/api/reset-player', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ playerId }) });
                     if (!res.ok) { const err = await res.json(); throw new Error(err.message || 'Échec.'); }
@@ -335,7 +374,7 @@
     });
 
     resetAllBtn.addEventListener('click', async () => {
-        if (confirm("⚠️ ATTENTION ! ⚠️\nRéinitialiser la progression de TOUS les élèves ? Action irréversible.")) {
+        if (confirm("⚠️ ATTENTION ! ⚠️\nRéinitialiser TOUS les élèves ?")) {
             try {
                 const res = await fetch('/api/reset-all-players', { method: 'POST' });
                 if (!res.ok) { const err = await res.json(); throw new Error(err.message || 'Échec.'); }
@@ -344,12 +383,17 @@
         }
     });
 
-    async function startImpersonation(playerData) {
-        isImpersonating = true; impersonatedPlayer = playerData;
+    async function startImpersonation(playerData, isLocalTest = false) {
+        isImpersonating = true;
+        impersonatedPlayer = playerData;
         const classKey = getClassKey(playerData.classroom);
         levels = allQuestionsData[classKey] || [];
         hideFormShowGame();
-        profModeIndicator.innerHTML = `<span class="prof-badge">👤 TEST EN TANT QUE : ${playerData.firstName} ${playerData.lastName}</span>`;
+        if (isLocalTest) {
+            profModeIndicator.innerHTML = `<span class="prof-badge">🎮 MODE TEST LOCAL (5e)</span>`;
+        } else {
+            profModeIndicator.innerHTML = `<span class="prof-badge">👤 TEST EN TANT QUE : ${playerData.firstName} ${playerData.lastName}</span>`;
+        }
         profModeIndicator.style.display = "block";
         profGameControls.style.display = "block";
         setupGameForStudent(playerData);
@@ -359,8 +403,7 @@
         const studentLevelIndex = player.validatedLevels ? player.validatedLevels.length : 0;
         if (studentLevelIndex >= levels.length) {
             qElt.textContent = "🎉 Cet élève a terminé tous les niveaux !";
-            choicesZone.innerHTML = ""; freeInputZone.style.display = "none";
-            return;
+            choicesZone.innerHTML = ""; freeInputZone.style.display = "none"; return;
         }
         setupLevel(studentLevelIndex);
         const levelToLoad = levels[studentLevelIndex];
@@ -374,11 +417,16 @@
         updateBars();
     }
 
-    function exitImpersonation() {
-        isImpersonating = false; impersonatedPlayer = null;
-        game.style.display = "none"; recentPlayersSection.style.display = "block";
+    async function exitImpersonation() {
+        isImpersonating = false;
+        impersonatedPlayer = null;
+        game.style.display = "none";
+        recentPlayersSection.style.display = "block";
         profGameControls.style.display = "none";
-        fetchPlayers(true);
+        // --- DEBUG ---
+        console.log("%c[DEBUG] Re-chargement des données des élèves...", "color: blue; font-weight: bold;");
+        await fetchPlayers(true);
+        console.log("[DEBUG] Données du tableau de bord mises à jour (côté client):", allPlayersData);
     }
     
     $('#profBackToDashboardBtn').addEventListener('click', exitImpersonation);
@@ -401,10 +449,25 @@
 
     // --- SECTION 3: Logique principale du Quiz ---
     
+    // Ajout pour suivre l'état des touches R et T
+    let isRKeyDown = false;
+    let isTKeyDown = false;
+    document.addEventListener('keydown', e => {
+        if (e.key.toLowerCase() === 'r') isRKeyDown = true;
+        if (e.key.toLowerCase() === 't') isTKeyDown = true;
+    });
+    document.addEventListener('keyup', e => {
+        if (e.key.toLowerCase() === 'r') isRKeyDown = false;
+        if (e.key.toLowerCase() === 't') isTKeyDown = false;
+    });
+    window.addEventListener('blur', () => { // Réinitialise si l'utilisateur quitte la fenêtre
+        isRKeyDown = false;
+        isTKeyDown = false;
+    });
+    
     let currentLevel = 0, localScores = [], general = 0, currentIndex = -1, locked = false;
     let lives = 4; const MAX_LIVES = 4;
     const ZOMBIE_TIME_SECS = 25, ZOMBIE_TIME_FINAL_SECS = 40, INTERVAL_MS = 20;
-
     const levelTitle = $("#levelTitle"), livesWrap = $("#lives"), mainBar = $("#mainBar"), subBarsContainer = $("#subBars");
     const generalText = $("#general"), qElt = $("#question"), feedback = $("#feedback"), choicesZone = $("#choices");
     const freeInputZone = $("#freeInputZone"), inputElt = $("#answer"), submitBtn = $("#submit"), arena = $("#arena");
@@ -414,11 +477,27 @@
     
     async function saveProgress(progressType, value, forPlayerId = null) {
         const playerIdToSave = forPlayerId || currentPlayerId;
-        if (!playerIdToSave || playerIdToSave === 'prof' || (isProfessorMode && !isImpersonating)) return;
+
+        // --- DEBUG ---
+        console.log(`%c[CLIENT] ---> ENVOI: Sauvegarde de '${progressType}: ${value}' pour l'ID ${playerIdToSave}`, "color: green;");
+
+        if (playerIdToSave === 'prof-test') {
+            let profTestData = JSON.parse(localStorage.getItem('profTestData'));
+            if (progressType === 'level' && !profTestData.validatedLevels.includes(value)) profTestData.validatedLevels.push(value);
+            if (progressType === 'question' && !profTestData.validatedQuestions.includes(value)) profTestData.validatedQuestions.push(value);
+            localStorage.setItem('profTestData', JSON.stringify(profTestData));
+            impersonatedPlayer = profTestData;
+            return;
+        }
+
+        if (!playerIdToSave || playerIdToSave === 'prof') return;
+        
         try {
             const res = await fetch('/api/save-progress', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ playerId: playerIdToSave, progressType, value }) });
+            // --- DEBUG ---
+            console.log(`%c[CLIENT] <--- RÉPONSE SERVEUR: Status ${res.status}`, "color: darkorange;");
             if (!res.ok) throw new Error('Échec de la sauvegarde.');
-        } catch (error) { console.error("❌ Échec de la sauvegarde:", error); }
+        } catch (error) { console.error("❌ Échec critique de la sauvegarde:", error); }
     }
 
     function initQuiz() { if (levels.length > 0) setupLevel(0); }
@@ -431,24 +510,38 @@
       general = 0; currentIndex = -1; lives = MAX_LIVES; renderLives();
       subBarsContainer.innerHTML = "";
       lvl.questions.forEach((_,i)=>{
-        const bar=document.createElement("div"); bar.className="subProgress" + (isProfessorMode ? " prof-mode" : "");
+        const bar=document.createElement("div"); 
+        bar.className="subProgress prof-mode"; // Rendu cliquable pour tous
         bar.innerHTML=`<div class="subBar" id="subBar${i}"></div><div class="subLabel">${i + 1}</div>`;
-        if (isProfessorMode) bar.addEventListener('click', () => handleBarClick(i));
+        bar.addEventListener('click', () => handleBarClick(i));
         subBarsContainer.appendChild(bar);
       });
       updateBars(); nextQuestion(false); 
     }
 
     function handleBarClick(questionIndex) {
+      // Condition ajoutée : Pour un élève, les touches R et T doivent être maintenues.
+      if (!isProfessorMode && !(isRKeyDown && isTKeyDown)) {
+        // Si c'est un élève et que les touches ne sont pas enfoncées, on ne fait rien.
+        // Le mode professeur/impersonation n'est pas affecté.
+        return;
+      }
+        
       if (locked) return;
       const lvl = levels[currentLevel], req = lvl.requiredPerQuestion;
-      if (localScores[questionIndex] < req) {
-          localScores[questionIndex]++;
-          if (localScores[questionIndex] >= req) general++;
+      const oldScore = localScores[questionIndex];
+      if (oldScore < req) {
+          localScores[questionIndex] = req;
+          if(oldScore < req) general++;
           updateBars();
-          if (isImpersonating) saveProgress('question', `${lvl.id}-${questionIndex}`, impersonatedPlayer._id);
+          
+          const questionIdToSave = `${lvl.id}-${questionIndex}`;
+          // Sauvegarde systématique lors du clic, gérée par saveProgress
+          saveProgress('question', questionIdToSave, isImpersonating ? impersonatedPlayer._id : currentPlayerId);
       }
-      if (general >= lvl.questions.length) feedback.textContent = `Niveau terminé !`;
+      if (general >= lvl.questions.length) {
+        nextQuestion(false); // Relance le check de fin de niveau
+      }
     }
     
     function updateBars() {
@@ -472,22 +565,25 @@
     function nextQuestion(keepZombie) {
         if (!keepZombie) { stopZombie(); }
         locked = false; feedback.textContent = "";
-
         const lvl = levels[currentLevel];
         if (general >= lvl.questions.length) {
+            console.log(`%c[CLIENT] 🎉 NIVEAU TERMINÉ ! Sauvegarde du niveau '${lvl.id}'...`, "color: #0077cc; font-weight: bold; font-size: 1.1em;");
             if (isImpersonating) { feedback.textContent = `Niveau terminé. Validez via les boutons.`; return; }
             qElt.textContent = `🎉 Bravo ! ${lvl.title} terminé !`;
             choicesZone.innerHTML = ""; freeInputZone.style.display = "none";
             saveProgress('level', lvl.id);
             setTimeout(() => {
-                if (currentLevel < levels.length - 1) setupLevel(currentLevel + 1);
-                else qElt.textContent = "🎉 Félicitations ! Tu as terminé tous les niveaux !";
+                console.log(`[CLIENT] ⏰ setTimeout fired. Tentative de chargement du niveau suivant.`);
+                if (currentLevel < levels.length - 1) {
+                    setupLevel(currentLevel + 1);
+                } else {
+                    qElt.textContent = "🎉 Félicitations ! Tu as terminé tous les niveaux !";
+                }
             }, 2000);
             return;
         }
         currentIndex = findNextIndex(currentIndex);
         renderQuestion();
-        
         const isInteractiveMode = !isProfessorMode || isImpersonating;
         if (isInteractiveMode) startZombie();
     }
@@ -498,9 +594,7 @@
         const progress = localScores[currentIndex];
         qElt.textContent = q.q; inputElt.value = "";
         choicesZone.innerHTML = ""; freeInputZone.style.display = "none";
-
         if (isProfessorMode && !isImpersonating) return;
-
         if (progress >= lvl.requiredPerQuestion - 1) {
             freeInputZone.style.display = "block"; inputElt.focus();
         } else {
@@ -517,7 +611,9 @@
         const ok = isCorrectOption(opt, q); locked = true;
         if (ok) {
             elt.classList.add("correct"); feedback.textContent = "✅ Bonne réponse !";
-            attack(); incrementProgress(1); setTimeout(() => nextQuestion(false), 900);
+            attack(); 
+            incrementProgress(1);
+            setTimeout(() => nextQuestion(false), 900);
         } else {
             elt.classList.add("wrong"); wrongAnswerFlow(q);
         }
@@ -536,7 +632,9 @@
         const ok = isCorrectFreeInput(q, inputElt.value); locked = true;
         if (ok) {
             feedback.textContent = "✅ Bonne réponse !";
-            attack(); incrementProgress(1, true); setTimeout(() => nextQuestion(false), 900);
+            attack(); 
+            incrementProgress(1);
+            setTimeout(() => nextQuestion(false), 900);
         } else {
             localScores[currentIndex] = Math.max(0, localScores[currentIndex] - (levels[currentLevel].wrongPenaltyInput || 1));
             updateBars(); wrongAnswerFlow(q);
@@ -558,13 +656,19 @@
         correctionOverlay.style.display = "flex";
     }
 
-    function incrementProgress(v, final = false) {
-        const req = levels[currentLevel].requiredPerQuestion;
+    function incrementProgress(v) {
+        const lvl = levels[currentLevel];
+        if (!lvl || !lvl.questions[currentIndex]) return;
+        
+        const req = lvl.requiredPerQuestion;
         const oldScore = localScores[currentIndex];
         localScores[currentIndex] = Math.min(req, localScores[currentIndex] + v);
-        if (oldScore < req && localScores[currentIndex] >= req) general++;
+        
+        if (oldScore < req && localScores[currentIndex] >= req) {
+            general++;
+            saveProgress('question', lvl.id + '-' + currentIndex);
+        }
         updateBars();
-        if (final && !isProfessorMode) saveProgress('question', levels[currentLevel].id + '-' + currentIndex);
     }
     
     function decreaseLives(){
@@ -601,13 +705,11 @@
       },INTERVAL_MS);
     }
 
-    // Gèle le mouvement du zombie sans le réinitialiser
     function pauseZombieMovement() {
         if(zombieInterval) clearInterval(zombieInterval);
         zombieInterval = null;
     }
 
-    // Réinitialise complètement le zombie
     function stopZombie(){
       pauseZombieMovement();
       zombiePosition = 20;
@@ -617,7 +719,7 @@
 
     function attack() {
       if (projectileInterval || (isProfessorMode && !isImpersonating)) return;
-      pauseZombieMovement(); // Gèle le zombie sur place
+      pauseZombieMovement();
       zombiePaused = true;
       projectileElt.style.display = "block";
       
@@ -634,8 +736,7 @@
           projectileInterval = null;
           projectileElt.style.display = "none";
           projectileElt.style.left = "0px";
-
-          zombieElt.style.display = 'none'; // Fait disparaître le zombie à l'impact
+          zombieElt.style.display = 'none';
           zombiePaused = false;
         }
       }, INTERVAL_MS);

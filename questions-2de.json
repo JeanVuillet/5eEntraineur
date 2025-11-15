@@ -4,12 +4,36 @@
     "title": "Niveau 1 (2de) : La Révolution Française",
     "requiredPerQuestion": 2,
     "questions": [
-      { "q": "Quelle date marque la prise de la Bastille ?", "a": "14 juillet 1789", "options": ["4 août 1789", "14 juillet 1789", "26 août 1789", "21 janvier 1793"] },
-      { "q": "Quel texte fondamental est adopté le 26 août 1789 ?", "a": "La DDHC", "options": ["La Constitution", "Le Code Civil", "La DDHC", "L'Encyclopédie"] },
-      { "q": "Quel roi a été guillotiné en 1793 ?", "a": "Louis XVI", "options": ["Louis XIV", "Louis XV", "Louis XVI", "Louis XVIII"] },
-      { "q": "Comment s'appelle la période de violence extrême entre 1793 et 1794 ?", "a": "La Terreur", "options": ["La Fronde", "La Jacquerie", "La Terreur", "Le Directoire"] },
-      { "q": "Quel personnage prend le pouvoir par un coup d'État en 1799 ?", "a": "Napoléon Bonaparte", "options": ["Robespierre", "Danton", "Napoléon Bonaparte", "Talleyrand"] },
-      { "q": "En quelle année Napoléon se sacre-t-il Empereur ?", "a": "1804", "options": ["1799", "1804", "1812", "1815"] }
+      {
+        "q": "Quelle date marque la prise de la Bastille ?",
+        "a": "14 juillet 1789",
+        "options": ["4 août 1789", "14 juillet 1789", "26 août 1789", "21 janvier 1793"]
+      },
+      {
+        "q": "Quel texte fondamental est adopté le 26 août 1789 ?",
+        "a": "La DDHC",
+        "options": ["La Constitution", "Le Code Civil", "La DDHC", "L'Encyclopédie"]
+      },
+      {
+        "q": "Quel roi a été guillotiné en 1793 ?",
+        "a": "Louis XVI",
+        "options": ["Louis XIV", "Louis XV", "Louis XVI", "Louis XVIII"]
+      },
+      {
+        "q": "Comment s'appelle la période de violence extrême entre 1793 et 1794 ?",
+        "a": "La Terreur",
+        "options": ["La Fronde", "La Jacquerie", "La Terreur", "Le Directoire"]
+      },
+      {
+        "q": "Quel personnage prend le pouvoir par un coup d'État en 1799 ?",
+        "a": "Napoléon Bonaparte",
+        "options": ["Robespierre", "Danton", "Napoléon Bonaparte", "Talleyrand"]
+      },
+      {
+        "q": "En quelle année Napoléon se sacre-t-il Empereur ?",
+        "a": "1804",
+        "options": ["1799", "1804", "1812", "1815"]
+      }
     ]
   }
 ]
