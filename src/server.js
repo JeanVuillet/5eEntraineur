@@ -159,7 +159,23 @@ app.post('/api/reset-all-players', async (req, res) => {
       res.status(500).json({ message: 'Erreur serveur.' }); 
     }
 });
-
+// Route pour récupérer la progression d'un seul joueur
+app.get('/api/player-progress/:playerId', async (req, res) => {
+  try {
+    const player = await Player.findById(req.params.playerId);
+    if (!player) {
+      return res.status(404).json({ message: 'Joueur non trouvé.' });
+    }
+    // On ne renvoie que les données nécessaires, pas tout l'objet
+    res.status(200).json({
+      validatedLevels: player.validatedLevels,
+      validatedQuestions: player.validatedQuestions
+    });
+  } catch (err) {
+    console.error('[SERVEUR] Erreur /api/player-progress:', err);
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
 // ====== START SERVER =======
 app.listen(port, () => {
   console.log(`✅ Serveur Express lancé sur http://localhost:${port}`);

@@ -46,6 +46,7 @@ let lives = 4;
 const MAX_LIVES = 4;
 let currentGameModuleInstance = null;
 let allPlayersData = [];
+let allQuestionsData = {};
 
 // --- SECTION 1: Logique de connexion et de navigation ---
 function showStudent(stu) {
@@ -90,8 +91,11 @@ async function loadChapter(chapterId, questionsKey, templateId, gameClass) {
   gameModuleContainer.innerHTML = "Chargement du chapitre...";
 
   await loadQuestions(questionsKey);
+  // On filtre les niveaux pour ne garder que ceux du chapitre sélectionné
+  levels = levels.filter(level => level.chapterId === chapterId);
+
   if (levels.length === 0) {
-    gameModuleContainer.innerHTML = `<p class="error">Impossible de charger les questions pour ce chapitre.</p>`;
+    gameModuleContainer.innerHTML = `<p class="error">Aucun niveau trouvé pour ce chapitre et cette classe.</p>`;
     return;
   }
 
@@ -143,6 +147,7 @@ async function loadChapter(chapterId, questionsKey, templateId, gameClass) {
   }
 }
 
+// Logique de démarrage fonctionnelle
 (async () => {
   if (saved && saved.id) {
     showStudent(saved);
@@ -159,6 +164,7 @@ async function loadChapter(chapterId, questionsKey, templateId, gameClass) {
     registerCard.style.display = "block";
   }
 })();
+
 
 form?.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -220,11 +226,18 @@ $("#validateProfPasswordBtn")?.addEventListener("click", () => {
 
 // --- SECTION 2: Logique principale du Quiz ---
 function initQuiz() {
-  if (levels.length > 0) setupLevel(0);
+  if (levels.length > 0) {
+    const validatedLevelsInChapter = levels.filter(level => saved.validatedLevels && saved.validatedLevels.includes(level.id));
+    setupLevel(validatedLevelsInChapter.length);
+  }
 }
 
 function setupLevel(idx) {
   currentLevel = idx;
+  if(!levels[currentLevel]) {
+    gameModuleContainer.innerHTML = "<h1>🎉 Félicitations, tu as terminé ce chapitre !</h1><button onclick='window.location.reload()'>Retour</button>";
+    return;
+  }
   const lvl = levels[currentLevel];
   levelTitle.textContent = lvl.title;
   localScores = new Array(lvl.questions.length).fill(0);
@@ -279,12 +292,11 @@ async function nextQuestion(keepAnimation) {
 
   if (general >= lvl.questions.length) {
     await saveProgress("level", lvl.id);
-
     if (currentLevel < levels.length - 1) {
       setupLevel(currentLevel + 1);
     } else {
       gameModuleContainer.innerHTML =
-        "<h1>🎉 Félicitations, tu as tout terminé !</h1>";
+        "<h1>🎉 Félicitations, tu as terminé ce chapitre !</h1><button onclick='window.location.reload()'>Retour aux chapitres</button>";
     }
     return;
   }
@@ -369,9 +381,10 @@ async function fetchPlayers() {
   if (!profDashboard) return;
   profDashboard.style.display = "block";
   const table = $("#playersTable");
-  const tbody = table.querySelector('tbody') || document.createElement('tbody');
-  if (!table.contains(tbody)) table.appendChild(tbody);
-  tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Chargement...</td></tr>`;
+  table.querySelectorAll('tbody').forEach(tbody => tbody.remove());
+  const loadingTbody = document.createElement('tbody');
+  loadingTbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Chargement...</td></tr>`;
+  table.appendChild(loadingTbody);
 
   try {
     const response = await fetch("/api/players", { cache: "no-store" });
@@ -381,29 +394,11 @@ async function fetchPlayers() {
     applyFiltersAndRender();
   } catch (error) {
     const table = $("#playersTable");
-    const tbody = table.querySelector('tbody') || document.createElement('tbody');
-    tbody.innerHTML = `<tr><td colspan="5" style="color: var(--warn);">❌ Impossible de charger : ${error.message}</td></tr>`;
+    table.querySelectorAll('tbody').forEach(tbody => tbody.remove());
+    const errorTbody = document.createElement('tbody');
+    errorTbody.innerHTML = `<tr><td colspan="6" style="color: var(--warn);">❌ Impossible de charger : ${error.message}</td></tr>`;
+    table.appendChild(errorTbody);
   }
-}
-
-// ==================================================================
-// --- CORRIGÉ : Fonctions d'affichage du tableau de bord mises à jour ---
-// ==================================================================
-function getPlayerProgressState(player) {
-  const classKey = getClassKey(player.classroom);
-  const levelsData =
-    (window.allQuestionsData && window.allQuestionsData[classKey]) || null;
-  if (!levelsData) return null;
-  const validatedLevels = player.validatedLevels || [];
-  let currentLevelIndex = validatedLevels.length;
-  if (currentLevelIndex >= levelsData.length) {
-    return { isFinished: true };
-  }
-  return {
-    isFinished: false,
-    currentLevel: levelsData[currentLevelIndex],
-    validatedQuestions: player.validatedQuestions || [],
-  };
 }
 
 function generateLevelProgressHtml(level, validatedQuestions) {
@@ -420,14 +415,13 @@ function generateLevelProgressHtml(level, validatedQuestions) {
   return html;
 }
 
-
 function renderPlayers(playersToRender) {
   const table = $("#playersTable");
   table.querySelectorAll('tbody').forEach(tbody => tbody.remove());
 
   if (playersToRender.length === 0) {
     const tbody = document.createElement('tbody');
-    tbody.innerHTML = `<tr><td colspan="5">Aucun élève trouvé.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6">Aucun élève trouvé.</td></tr>`;
     table.appendChild(tbody);
     return;
   }
@@ -453,26 +447,22 @@ function renderPlayers(playersToRender) {
 
       for (const chapterId in chaptersToDisplay) {
         const chapterLabel = chaptersToDisplay[chapterId];
-        
         const levelsInThisChapter = allLevelsForClass.filter(level => level.chapterId === chapterId);
         
         let progressHtml = '';
-        let levelTitleHtml = ''; // Variable pour stocker le titre du niveau
+        let levelTitleHtml = '';
 
         if (levelsInThisChapter.length === 0) {
           progressHtml = '<em>(Non applicable)</em>';
           levelTitleHtml = '-';
         } else {
             const currentLevelForChapter = levelsInThisChapter.find(level => !validatedLevels.includes(level.id));
-
             if (currentLevelForChapter) {
-                // On a un niveau en cours, on stocke son titre et sa progression
                 levelTitleHtml = currentLevelForChapter.title;
                 progressHtml = generateLevelProgressHtml(currentLevelForChapter, validatedQuestions);
             } else {
-                // Tous les niveaux du chapitre sont terminés
                 levelTitleHtml = 'Terminé';
-                progressHtml = '<span class="finished-badge" style="background-color: #f59e0b; color: white; padding: 4px 10px; border-radius: 12px; font-size: 14px; display: inline-flex; align-items: center; gap: 4px;">🏆</span>';
+                progressHtml = '<span class="finished-badge">🏆</span>';
             }
         }
 
@@ -486,7 +476,6 @@ function renderPlayers(playersToRender) {
                 ${player.classroom}
               </td>
               <td>${chapterLabel}</td>
-              <!-- On affiche le titre du niveau ici -->
               <td>${levelTitleHtml}</td>
               <td>${progressHtml}</td>
               <td rowspan="${Object.keys(chaptersToDisplay).length}" style="vertical-align: middle;">
@@ -500,20 +489,16 @@ function renderPlayers(playersToRender) {
           chapterRowsHtml += `
             <tr>
               <td>${chapterLabel}</td>
-              <!-- On affiche le titre du niveau ici aussi -->
               <td>${levelTitleHtml}</td>
               <td>${progressHtml}</td>
             </tr>`;
         }
       }
-      
       playerTbody.innerHTML = chapterRowsHtml;
       table.appendChild(playerTbody);
     });
 }
 
-
-let allQuestionsData = {};
 async function loadAllQuestionsForProf() {
   const keys = ["5e", "6e", "2de"];
   try {
@@ -526,28 +511,21 @@ async function loadAllQuestionsForProf() {
     });
     window.allQuestionsData = allQuestionsData;
   } catch (err) {
-    console.error(
-      "Impossible de pré-charger toutes les questions pour le prof.",
-      err
-    );
+    console.error("Impossible de pré-charger toutes les questions pour le prof.", err);
   }
 }
 
 function applyFiltersAndRender() {
   let filtered = [...allPlayersData];
   const selectedClass = classFilter ? classFilter.value : "all";
-  const searchTerm = studentSearch
-    ? studentSearch.value.trim().toLowerCase()
-    : "";
+  const searchTerm = studentSearch ? studentSearch.value.trim().toLowerCase() : "";
 
   if (selectedClass !== "all") {
     filtered = filtered.filter((p) => p.classroom === selectedClass);
   }
 
   if (searchTerm) {
-    filtered = filtered.filter((p) =>
-      `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchTerm)
-    );
+    filtered = filtered.filter((p) => `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchTerm));
   }
 
   renderPlayers(filtered);
@@ -643,4 +621,3 @@ async function saveProgress(progressType, value) {
     return false;
   }
 }
-//coment

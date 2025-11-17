@@ -1,38 +1,230 @@
 [
   {
-    "id": "niveau1-6e",
-    "title": "Niveau 1 (6e) : La Préhistoire",
-    "requiredPerQuestion": 2,
+    "id": "ch1-lvl1-6e",
+    "chapterId": "ch1-zombie",
+    "title": "Chapitre 1 - Niveau 1 (Premiers hommes et néolithique)",
+    "requiredPerQuestion": 3,
     "questions": [
       {
-        "q": "Comment s'appelle la période avant l'invention de l'écriture ?",
-        "a": "La Préhistoire",
-        "options": ["L'Antiquité", "Le Moyen Âge", "La Préhistoire", "Les Temps Modernes"]
+        "q": "Quel est le mode de vie des premiers hommes au Paléolithique ?",
+        "a": "nomades",
+        "options": ["nomades", "sédentaires", "paysans", "citadins"]
       },
       {
-        "q": "Quel outil en pierre taillée est emblématique du Paléolithique ?",
-        "a": "Le biface",
-        "options": ["La hache", "Le marteau", "Le biface", "La poterie"]
+        "q": "Quelle est l'activité principale pour se nourrir au Paléolithique ?",
+        "a": "chasse et cueillette",
+        "options": ["chasse et cueillette", "agriculture", "élevage", "commerce"]
       },
       {
-        "q": "Dans quelle grotte célèbre trouve-t-on des peintures rupestres en France ?",
+        "q": "Comment s'appelle la période où les humains deviennent agriculteurs et éleveurs ?",
+        "a": "Néolithique",
+        "options": ["Paléolithique", "Néolithique", "Antiquité", "Moyen Âge"]
+      },
+      {
+        "q": "Comment appelle-t-on les peintures réalisées sur les parois des grottes ?",
+        "a": "art rupestre",
+        "options": ["art rupestre", "graffiti", "fresque moderne", "mosaïque"]
+      },
+      {
+        "q": "Quel progrès maîtrise l'être humain pour se chauffer et cuire les aliments ?",
+        "a": "le feu",
+        "options": ["le feu", "la roue", "l'écriture", "la monnaie"]
+      },
+      {
+        "q": "Vers quelle date apparaît l'agriculture au Proche-Orient ?",
+        "a": "vers 10 000 av. J.-C.",
+        "options": ["vers 10 000 av. J.-C.", "vers 1 000 av. J.-C.", "vers 500 ap. J.-C.", "vers 3 000 av. J.-C."]
+      }
+    ]
+  },
+  {
+    "id": "ch1-lvl2-6e",
+    "chapterId": "ch1-zombie",
+    "title": "Chapitre 1 - Niveau 2 (Sites et repères)",
+    "requiredPerQuestion": 3,
+    "questions": [
+      {
+        "q": "En France, quelle célèbre grotte ornée est un exemple d'art rupestre ?",
         "a": "Lascaux",
-        "options": ["Chauvet", "Cosquer", "Lascaux", "Niaux"]
+        "options": ["Lascaux", "Chauvet", "Altamira", "Cosquer"]
       },
       {
-        "q": "Quel changement majeur marque le début du Néolithique ?",
-        "a": "L'agriculture",
-        "options": ["Le feu", "L'écriture", "L'agriculture", "La roue"]
+        "q": "Comment appelle-t-on le spécialiste qui fouille et étudie les traces matérielles du passé ?",
+        "a": "archéologue",
+        "options": ["archéologue", "géographe", "historien de l'art", "géologue"]
       },
       {
-        "q": "Comment appelle-t-on les grandes pierres dressées par les hommes du Néolithique ?",
-        "a": "Les mégalithes",
-        "options": ["Les pyramides", "Les statues", "Les totems", "Les mégalithes"]
+        "q": "Quand commence l'Histoire (par rapport à la Préhistoire) ?",
+        "a": "avec l'invention de l'écriture",
+        "options": ["avec l'invention de l'écriture", "avec l'apparition de l'homme", "avec la maîtrise du feu", "avec l'apparition des dinosaures"]
       },
       {
-        "q": "Quel est le premier métal travaillé par l'homme ?",
-        "a": "Le cuivre",
-        "options": ["Le fer", "L'or", "Le cuivre", "L'étain"]
+        "q": "Comment appelle-t-on l'être humain moderne, notre espèce ?",
+        "a": "Homo sapiens",
+        "options": ["Homo erectus", "Homo habilis", "Homo sapiens", "Australopithèque"]
+      },
+      {
+        "q": "Quel terme désigne le fait de s'installer durablement dans un lieu ?",
+        "a": "sédentarisation",
+        "options": ["nomadisme", "sédentarisation", "migration", "exode"]
+      },
+      {
+        "q": "Comment appelle-t-on un os ou une trace d'être vivant conservé dans la roche ?",
+        "a": "fossile",
+        "options": ["fossile", "minéral", "outil", "bijou"]
+      }
+    ]
+  },
+  {
+    "id": "ch1-lvl3-6e",
+    "chapterId": "ch1-zombie",
+    "title": "Chapitre 1 - Niveau 3 (Migrations et vocabulaire)",
+    "requiredPerQuestion": 3,
+    "questions": [
+      {
+        "q": "Comment appelle-t-on le déplacement durable d'un groupe de population d'un territoire vers un autre ?",
+        "a": "migration",
+        "options": ["migration", "voyage scolaire", "tourisme", "commerce"]
+      },
+      {
+        "q": "Quel mot désigne la période très ancienne avant l'apparition de l'écriture ?",
+        "a": "Préhistoire",
+        "options": ["Préhistoire", "Antiquité", "Moyen Âge", "Temps modernes"]
+      },
+      {
+        "q": "Comment s'appelle l'aptitude de l'être humain à marcher uniquement sur ses deux pieds ?",
+        "a": "bipédie",
+        "options": ["bipédie", "quadrupédie", "natation", "planification"]
+      },
+      {
+        "q": "Quel terme désigne les objets fabriqués par l'homme (outils, armes, bijoux, etc.) ?",
+        "a": "outils ou objets archéologiques",
+        "options": ["outils ou objets archéologiques", "fossiles", "minéraux", "roches volcaniques"]
+      },
+      {
+        "q": "Quand commence approximativement la Préhistoire ?",
+        "a": "avec l'apparition des premiers hommes",
+        "options": ["avec l'apparition des premiers hommes", "avec le Big Bang", "avec la disparition des dinosaures", "avec la Révolution française"]
+      },
+      {
+        "q": "Quel terme regroupe l'ensemble des manières de vivre d'un groupe humain (habitat, croyances, techniques...) ?",
+        "a": "culture",
+        "options": ["culture", "climat", "géologie", "météo"]
+      }
+    ]
+  },
+
+  {
+    "id": "ch2-lvl1-6e",
+    "chapterId": "ch2-starship",
+    "title": "Chapitre 2 - Niveau 1 (Habiter une métropole)",
+    "requiredPerQuestion": 3,
+    "questions": [
+      {
+        "q": "Comment appelle-t-on une très grande ville qui concentre population, activités et pouvoirs ?",
+        "a": "métropole",
+        "options": ["métropole", "village", "campagne", "hameau"]
+      },
+      {
+        "q": "Quel terme désigne le centre d'affaires d'une grande ville (tours, bureaux, sièges d'entreprises) ?",
+        "a": "quartier d'affaires",
+        "options": ["quartier d'affaires", "banlieue", "campagne", "zone industrielle"]
+      },
+      {
+        "q": "Comment appelle-t-on les zones construites autour du centre d'une métropole ?",
+        "a": "banlieues",
+        "options": ["banlieues", "déserts", "forêts", "rizières"]
+      },
+      {
+        "q": "Quel moyen de transport est typique des déplacements quotidiens en métropole ?",
+        "a": "transports en commun",
+        "options": ["transports en commun", "bateaux de croisière", "avions long-courriers", "char à bœufs"]
+      },
+      {
+        "q": "Quel problème est souvent important dans les grandes métropoles ?",
+        "a": "les embouteillages",
+        "options": ["les embouteillages", "l'absence de circulation", "le manque d'habitants", "le manque d'activités"]
+      },
+      {
+        "q": "Quel mot désigne le fait d'habiter et de pratiquer un même espace ?",
+        "a": "habiter",
+        "options": ["habiter", "migrer", "conquérir", "coloniser"]
+      }
+    ]
+  },
+  {
+    "id": "ch2-lvl2-6e",
+    "chapterId": "ch2-starship",
+    "title": "Chapitre 2 - Niveau 2 (Organisation de la ville)",
+    "requiredPerQuestion": 3,
+    "questions": [
+      {
+        "q": "Quel terme désigne la ville principale d'une région ou d'un pays ?",
+        "a": "capitale",
+        "options": ["capitale", "village-centre", "hameau", "quartier"]
+      },
+      {
+        "q": "Quel type de quartier regroupe plutôt des maisons individuelles avec jardins ?",
+        "a": "quartier pavillonnaire",
+        "options": ["quartier pavillonnaire", "centre historique", "quartier d'affaires", "zone portuaire"]
+      },
+      {
+        "q": "Quel mot désigne les inégalités entre les quartiers riches et les quartiers pauvres ?",
+        "a": "inégalités socio-spatiales",
+        "options": ["inégalités socio-spatiales", "égalité parfaite", "frontière naturelle", "climat urbain"]
+      },
+      {
+        "q": "Quel élément est souvent au cœur d'une métropole pour les échanges mondiaux ?",
+        "a": "un grand port ou un aéroport international",
+        "options": ["un grand port ou un aéroport international", "un volcan", "une forêt primaire", "une base scientifique polaire"]
+      },
+      {
+        "q": "Quel phénomène décrit l'augmentation de la population dans les villes ?",
+        "a": "urbanisation",
+        "options": ["urbanisation", "déforestation", "inondation", "érosion"]
+      },
+      {
+        "q": "Comment appelle-t-on un trajet domicile–travail effectué chaque jour ?",
+        "a": "mobilité quotidienne",
+        "options": ["mobilité quotidienne", "migration internationale", "tourisme", "exode rural"]
+      }
+    ]
+  },
+  {
+    "id": "ch2-lvl3-6e",
+    "chapterId": "ch2-starship",
+    "title": "Chapitre 2 - Niveau 3 (Acteurs et enjeux)",
+    "requiredPerQuestion": 3,
+    "questions": [
+      {
+        "q": "Quel acteur décide de l'aménagement d'un quartier (routes, écoles, parcs...) ?",
+        "a": "les pouvoirs publics",
+        "options": ["les pouvoirs publics", "les pirates", "les météorologues", "les archéologues"]
+      },
+      {
+        "q": "Quel problème environnemental est fréquent dans les métropoles ?",
+        "a": "la pollution de l'air",
+        "options": ["la pollution de l'air", "la disparition de l'air", "les tremblements de terre quotidiens", "l'absence totale de bruit"]
+      },
+      {
+        "q": "Comment appelle-t-on les quartiers très pauvres et souvent construits illégalement ?",
+        "a": "bidonvilles",
+        "options": ["bidonvilles", "quartiers d'affaires", "quartiers pavillonnaires", "centres historiques"]
+      },
+      {
+        "q": "Quel mot désigne l'ensemble des services utiles aux habitants (écoles, hôpitaux, transports...) ?",
+        "a": "les services",
+        "options": ["les services", "les volcans", "les moussons", "les reliefs"]
+      },
+      {
+        "q": "Quel type de lieu urbain regroupe des magasins et des services pour consommer ?",
+        "a": "un centre commercial",
+        "options": ["un centre commercial", "un désert", "un glacier", "un champ cultivé"]
+      },
+      {
+        "q": "Quel terme désigne la participation des habitants à la vie de leur quartier (réunions, associations...) ?",
+        "a": "citoyenneté",
+        "options": ["citoyenneté", "migration", "sédentarisation", "éruption"]
       }
     ]
   }

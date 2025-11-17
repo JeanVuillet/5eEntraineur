@@ -1,6 +1,5 @@
 <template id="template-zombie-game">
   <style>
-    /* ... (les styles ne changent pas) ... */
     #arena { position: relative; height: clamp(180px, 36vh, 320px); margin-top: 10px; background: linear-gradient(#f0f9ff, #e0f2fe); border-radius: 12px; overflow: hidden; box-shadow: inset 0 -6px 0 #cbd5e1; }
     #hero, #zombie, #projectile { position: absolute; bottom: 0; height: clamp(90px, 26vh, 200px); max-width: 32vw; object-fit: contain; user-select: none; pointer-events: none; }
     #hero { left: min(3vw, 24px); }
@@ -31,97 +30,26 @@
 <script>
 class ZombieGame {
   constructor(container, controller) {
-    this.container = container;
-    this.controller = controller;
-    this.hero = container.querySelector("#hero");
-    this.zombie = container.querySelector("#zombie");
-    this.projectile = container.querySelector("#projectile");
-    this.arena = container.querySelector("#arena");
-    this.questionElement = container.querySelector("#question");
-    this.choicesZone = container.querySelector("#choices");
-    this.freeInputZone = container.querySelector("#freeInputZone");
-    this.inputElement = container.querySelector("#answer");
+    this.container = container; this.controller = controller;
+    this.hero = container.querySelector("#hero"); this.zombie = container.querySelector("#zombie");
+    this.projectile = container.querySelector("#projectile"); this.arena = container.querySelector("#arena");
+    this.questionElement = container.querySelector("#question"); this.choicesZone = container.querySelector("#choices");
+    this.freeInputZone = container.querySelector("#freeInputZone"); this.inputElement = container.querySelector("#answer");
     this.submitButton = container.querySelector("#submit");
-    
-    // Logique d'animation
-    this.zombieInterval = null;
-    this.projectileInterval = null;
-    this.zombiePosition = 20;
-    this.zombiePaused = false;
-    this.INTERVAL_MS = 20;
-
-    // ==================================================================
-    // --- CORRECTION APPLIQUÉE ICI ---
-    // On double le temps, ce qui divise la vitesse par 2.
-    this.ZOMBIE_TIME_SECS = 50;
-    // ==================================================================
-    
+    this.zombieInterval = null; this.projectileInterval = null; this.zombiePosition = 20;
+    this.zombiePaused = false; this.INTERVAL_MS = 20; this.ZOMBIE_TIME_SECS = 50;
     this.submitButton.addEventListener("click", () => this.onSubmitClick());
-    this.inputElement.addEventListener("keydown", (e) => {
-        if(e.key === 'Enter') this.onSubmitClick();
-    });
+    this.inputElement.addEventListener("keydown", (e) => { if(e.key === 'Enter') this.onSubmitClick(); });
   }
-
-  loadQuestion(q) {
-    this.questionElement.textContent = q.q; this.inputElement.value = "";
-    const progress = localScores[currentIndex];
-    const required = levels[currentLevel].requiredPerQuestion;
-    if (progress >= required - 1) {
-      this.choicesZone.style.display = 'none'; this.freeInputZone.style.display = 'block';
-      setTimeout(() => this.inputElement.focus(), 100);
-    } else {
-      this.freeInputZone.style.display = 'none'; this.choicesZone.style.display = 'flex';
-      this.choicesZone.innerHTML = "";
-      [...q.options].sort(() => Math.random() - 0.5).forEach(opt => {
-        const choiceButton = document.createElement("div"); choiceButton.className = "choice";
-        choiceButton.textContent = opt;
-        choiceButton.addEventListener("click", () => this.onChoiceClick(choiceButton, opt, q));
-        this.choicesZone.appendChild(choiceButton);
-      });
-    }
-  }
-  
-  onChoiceClick(element, option, questionData) {
-    if (this.controller.getState().isLocked) return;
-    const isCorrect = this._isCorrect(option, questionData);
-    if (isCorrect) {
-      element.classList.add("correct"); this.playSuccessAnimation(); this.controller.notifyCorrectAnswer();
-    } else {
-      element.classList.add("wrong"); this.controller.notifyWrongAnswer(questionData);
-    }
-  }
-
-  onSubmitClick() {
-    if (this.controller.getState().isLocked) return;
-    const questionData = levels[currentLevel].questions[currentIndex];
-    const isCorrect = this._isCorrect(this.inputElement.value, questionData, true);
-    if (isCorrect) {
-      this.playSuccessAnimation(); this.controller.notifyCorrectAnswer();
-    } else {
-      localScores[currentIndex] = Math.max(0, localScores[currentIndex] - 1);
-      updateBars();
-      this.controller.notifyWrongAnswer(questionData);
-    }
-  }
-
-  _normalize(s) { return (s || "").toLowerCase().trim(); }
-  _isCorrect(option, q, isFreeInput = false) {
-      const answer = this._normalize(option);
-      const correctAnswer = this._normalize(q.a);
-      if (isFreeInput) {
-          const acceptable = (q.acceptable || []).map(a => this._normalize(a));
-          return acceptable.includes(answer) || answer.includes(correctAnswer);
-      }
-      return answer === correctAnswer;
-  }
-
-  startAnimation() { this.startZombieMovement(); }
-  resetAnimation() { this.stopZombieMovement(); }
-  playSuccessAnimation() { this.attack(); }
-  startZombieMovement() { if (this.zombieInterval) return; this.zombie.style.display = 'block'; const arenaWidth = this.arena.offsetWidth; const maxDistance = arenaWidth - this.zombie.offsetWidth - this.hero.offsetWidth - 30; const speed = maxDistance / (this.ZOMBIE_TIME_SECS * 1000); this.zombieInterval = setInterval(() => { if (this.controller.getState().isLocked || this.zombiePaused) return; this.zombiePosition += speed * this.INTERVAL_MS; this.zombie.style.right = this.zombiePosition + "px"; if (this.zombiePosition >= maxDistance) { this.controller.notifyWrongAnswer(null); } }, this.INTERVAL_MS); }
-  stopZombieMovement() { clearInterval(this.zombieInterval); this.zombieInterval = null; this.zombiePosition = 20; if (this.zombie) this.zombie.style.right = this.zombiePosition + "px"; }
-  attack() { if (this.projectileInterval) return; this.zombiePaused = true; this.projectile.style.display = "block"; let projPos = this.hero.offsetWidth; const zombieRight = parseFloat(this.zombie.style.right); const PROJ_SPEED = 20; this.projectileInterval = setInterval(() => { projPos += PROJ_SPEED; this.projectile.style.left = projPos + "px"; if (projPos >= this.arena.offsetWidth - zombieRight - (this.zombie.offsetWidth / 2)) { clearInterval(this.projectileInterval); this.projectileInterval = null; this.projectile.style.display = "none"; this.projectile.style.left = "0px"; this.zombie.style.display = 'none'; this.zombiePaused = false; } }, this.INTERVAL_MS); }
+  loadQuestion(q){this.questionElement.textContent=q.q;this.inputElement.value="";const e=localScores[currentIndex],t=levels[currentLevel].requiredPerQuestion;if(e>=t-1){this.choicesZone.style.display="none",this.freeInputZone.style.display="block",setTimeout(()=>this.inputElement.focus(),100)}else{this.freeInputZone.style.display="none",this.choicesZone.style.display="flex",this.choicesZone.innerHTML="";[...q.options].sort(()=>.5-Math.random()).forEach(e=>{const t=document.createElement("div");t.className="choice",t.textContent=e,t.addEventListener("click",()=>this.onChoiceClick(t,e,q)),this.choicesZone.appendChild(t)})}}
+  onChoiceClick(e,t,o){if(this.controller.getState().isLocked)return;const i=this._isCorrect(t,o);i?(e.classList.add("correct"),this.playSuccessAnimation(),this.controller.notifyCorrectAnswer()):(e.classList.add("wrong"),this.controller.notifyWrongAnswer(o))}
+  onSubmitClick(){if(this.controller.getState().isLocked)return;const e=levels[currentLevel].questions[currentIndex],t=this._isCorrect(this.inputElement.value,e,!0);t?(this.playSuccessAnimation(),this.controller.notifyCorrectAnswer()):(localScores[currentIndex]=Math.max(0,localScores[currentIndex]-1),updateBars(),this.controller.notifyWrongAnswer(e))}
+  _normalize(e){return(e||"").toLowerCase().trim()}
+  _isCorrect(e,t,o=!1){const i=this._normalize(e),s=this._normalize(t.a);if(o){const e=(t.acceptable||[]).map(e=>this._normalize(e));return e.includes(i)||i.includes(s)}return i===s}
+  startAnimation(){this.startZombieMovement()}resetAnimation(){this.stopZombieMovement()}playSuccessAnimation(){this.attack()}
+  startZombieMovement(){if(this.zombieInterval)return;this.zombie.style.display="block";const e=this.arena.offsetWidth,t=e-this.zombie.offsetWidth-this.hero.offsetWidth-30,o=t/5e4;this.zombieInterval=setInterval(()=>{if(this.controller.getState().isLocked||this.zombiePaused)return;this.zombiePosition+=20*o,this.zombie.style.right=this.zombiePosition+"px",this.zombiePosition>=t&&this.controller.notifyWrongAnswer(null)},20)}
+  stopZombieMovement(){clearInterval(this.zombieInterval),this.zombieInterval=null,this.zombiePosition=20,this.zombie&&(this.zombie.style.right=this.zombiePosition+"px")}
+  attack(){if(this.projectileInterval)return;this.zombiePaused=!0,this.projectile.style.display="block";let e=this.hero.offsetWidth;const t=parseFloat(this.zombie.style.right);this.projectileInterval=setInterval(()=>{e+=20,this.projectile.style.left=e+"px",e>=this.arena.offsetWidth-t-this.zombie.offsetWidth/2&&(clearInterval(this.projectileInterval),this.projectileInterval=null,this.projectile.style.display="none",this.projectile.style.left="0px",this.zombie.style.display="none",this.zombiePaused=!1)},20)}
 }
-
 window.ZombieGame = ZombieGame;
 </script>

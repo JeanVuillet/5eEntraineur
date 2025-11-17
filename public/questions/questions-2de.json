@@ -1,38 +1,250 @@
 [
   {
-    "id": "niveau1-2de",
-    "title": "Niveau 1 (2de) : La Révolution Française",
-    "requiredPerQuestion": 2,
+    "id": "ch1-lvl1-2de",
+    "chapterId": "ch1-zombie",
+    "title": "Chapitre 1 - Niveau 1 (Repères Grèce et Rome)",
+    "requiredPerQuestion": 3,
     "questions": [
       {
-        "q": "Quelle date marque la prise de la Bastille ?",
-        "a": "14 juillet 1789",
-        "options": ["4 août 1789", "14 juillet 1789", "26 août 1789", "21 janvier 1793"]
+        "q": "Comment s'appelle la cité grecque qui sert souvent d'exemple de démocratie au Ve siècle av. J.-C. ?",
+        "a": "Athènes",
+        "options": ["Athènes", "Sparte", "Rome", "Alexandrie"]
       },
       {
-        "q": "Quel texte fondamental est adopté le 26 août 1789 ?",
-        "a": "La DDHC",
-        "options": ["La Constitution", "Le Code Civil", "La DDHC", "L'Encyclopédie"]
+        "q": "Comment appelle-t-on une cité grecque, avec sa ville et son territoire ?",
+        "a": "polis",
+        "options": ["polis", "forum", "agora", "civitas"]
       },
       {
-        "q": "Quel roi a été guillotiné en 1793 ?",
-        "a": "Louis XVI",
-        "options": ["Louis XIV", "Louis XV", "Louis XVI", "Louis XVIII"]
+        "q": "Comment s'appelle le grand espace au cœur de la cité romaine où l'on se rassemble ?",
+        "a": "forum",
+        "options": ["forum", "agora", "circus", "palais impérial"]
       },
       {
-        "q": "Comment s'appelle la période de violence extrême entre 1793 et 1794 ?",
-        "a": "La Terreur",
-        "options": ["La Fronde", "La Jacquerie", "La Terreur", "Le Directoire"]
+        "q": "Quel peuple domine la Méditerranée à l'époque classique (Ve–IVe siècles av. J.-C.) ?",
+        "a": "les Grecs",
+        "options": ["les Grecs", "les Romains", "les Carolingiens", "les Francs"]
       },
       {
-        "q": "Quel personnage prend le pouvoir par un coup d'État en 1799 ?",
-        "a": "Napoléon Bonaparte",
-        "options": ["Robespierre", "Danton", "Napoléon Bonaparte", "Talleyrand"]
+        "q": "Quel peuple domine la Méditerranée au début de notre ère ?",
+        "a": "les Romains",
+        "options": ["les Romains", "les Grecs", "les Vikings", "les Mongols"]
       },
       {
-        "q": "En quelle année Napoléon se sacre-t-il Empereur ?",
-        "a": "1804",
-        "options": ["1799", "1804", "1812", "1815"]
+        "q": "Quel nom donne-t-on à l'ensemble des territoires dominés par Rome ?",
+        "a": "l'Empire romain",
+        "options": ["l'Empire romain", "la polis", "le royaume franc", "l'empire carolingien"]
+      }
+    ]
+  },
+  {
+    "id": "ch1-lvl2-2de",
+    "chapterId": "ch1-zombie",
+    "title": "Chapitre 1 - Niveau 2 (Dates et événements)",
+    "requiredPerQuestion": 3,
+    "questions": [
+      {
+        "q": "Fondation légendaire de la ville de Rome ?",
+        "a": "753 av. J.-C.",
+        "options": ["753 av. J.-C.", "509 av. J.-C.", "27 av. J.-C.", "212 ap. J.-C."]
+      },
+      {
+        "q": "Mise en place de la République romaine (fin de la royauté) ?",
+        "a": "509 av. J.-C.",
+        "options": ["509 av. J.-C.", "753 av. J.-C.", "27 av. J.-C.", "476 ap. J.-C."]
+      },
+      {
+        "q": "Début de l'Empire romain avec Auguste ?",
+        "a": "27 av. J.-C.",
+        "options": ["27 av. J.-C.", "31 av. J.-C.", "212 ap. J.-C.", "395 ap. J.-C."]
+      },
+      {
+        "q": "Bataille navale qui oppose Octave à Antoine et Cléopâtre et assure la victoire d'Auguste ?",
+        "a": "Actium",
+        "options": ["Actium", "Salamine", "Marathon", "Thapsus"]
+      },
+      {
+        "q": "Édit de Caracalla accordant la citoyenneté romaine à presque tous les hommes libres de l'Empire ?",
+        "a": "212 ap. J.-C.",
+        "options": ["212 ap. J.-C.", "313 ap. J.-C.", "395 ap. J.-C.", "476 ap. J.-C."]
+      },
+      {
+        "q": "Grande victoire navale des Grecs sur les Perses en 480 av. J.-C. ?",
+        "a": "Salamine",
+        "options": ["Salamine", "Marathon", "Actium", "Cannes"]
+      }
+    ]
+  },
+  {
+    "id": "ch1-lvl3-2de",
+    "chapterId": "ch1-zombie",
+    "title": "Chapitre 1 - Niveau 3 (Institutions et sociétés)",
+    "requiredPerQuestion": 3,
+    "questions": [
+      {
+        "q": "Dans la démocratie athénienne, comment s'appelle l'assemblée des citoyens ?",
+        "a": "l'Ecclésia",
+        "options": ["l'Ecclésia", "le Sénat", "le Conseil des Cinq-Cents", "le triumvirat"]
+      },
+      {
+        "q": "À Athènes, quels habitants n'ont PAS la citoyenneté ?",
+        "a": "les femmes, les esclaves et les métèques",
+        "options": [
+          "les femmes, les esclaves et les métèques",
+          "les hommes adultes nés de parents citoyens",
+          "tous les habitants sans exception",
+          "uniquement les esclaves"
+        ]
+      },
+      {
+        "q": "Comment appelle-t-on le processus par lequel Rome diffuse sa langue, ses lois et sa culture dans l'Empire ?",
+        "a": "romanisation",
+        "options": ["romanisation", "hellénisation", "christianisation", "féodalisation"]
+      },
+      {
+        "q": "Comment s'appelle l'assemblée politique la plus importante à Rome sous la République ?",
+        "a": "le Sénat",
+        "options": ["le Sénat", "l'Ecclésia", "la Boulè", "le Conseil impérial"]
+      },
+      {
+        "q": "Quel groupe social est au sommet de la société romaine ?",
+        "a": "les citoyens riches (aristocratie sénatoriale et chevaliers)",
+        "options": [
+          "les citoyens riches (aristocratie sénatoriale et chevaliers)",
+          "les esclaves",
+          "les métèques",
+          "les paysans sans terres"
+        ]
+      },
+      {
+        "q": "Comment appelle-t-on les habitants de l'Empire qui ne sont pas citoyens romains avant l'édit de Caracalla ?",
+        "a": "les pérégrins",
+        "options": ["les pérégrins", "les patriciens", "les plébéiens", "les colons"]
+      }
+    ]
+  },
+
+  {
+    "id": "ch2-lvl1-2de",
+    "chapterId": "ch2-starship",
+    "title": "Chapitre 2 - Niveau 1 (Repères Grèce et Rome)",
+    "requiredPerQuestion": 3,
+    "questions": [
+      {
+        "q": "Comment s'appelle la cité grecque qui sert souvent d'exemple de démocratie au Ve siècle av. J.-C. ?",
+        "a": "Athènes",
+        "options": ["Athènes", "Sparte", "Rome", "Alexandrie"]
+      },
+      {
+        "q": "Comment appelle-t-on une cité grecque, avec sa ville et son territoire ?",
+        "a": "polis",
+        "options": ["polis", "forum", "agora", "civitas"]
+      },
+      {
+        "q": "Comment s'appelle le grand espace au cœur de la cité romaine où l'on se rassemble ?",
+        "a": "forum",
+        "options": ["forum", "agora", "circus", "palais impérial"]
+      },
+      {
+        "q": "Quel peuple domine la Méditerranée à l'époque classique (Ve–IVe siècles av. J.-C.) ?",
+        "a": "les Grecs",
+        "options": ["les Grecs", "les Romains", "les Carolingiens", "les Francs"]
+      },
+      {
+        "q": "Quel peuple domine la Méditerranée au début de notre ère ?",
+        "a": "les Romains",
+        "options": ["les Romains", "les Grecs", "les Vikings", "les Mongols"]
+      },
+      {
+        "q": "Quel nom donne-t-on à l'ensemble des territoires dominés par Rome ?",
+        "a": "l'Empire romain",
+        "options": ["l'Empire romain", "la polis", "le royaume franc", "l'empire carolingien"]
+      }
+    ]
+  },
+  {
+    "id": "ch2-lvl2-2de",
+    "chapterId": "ch2-starship",
+    "title": "Chapitre 2 - Niveau 2 (Dates et événements)",
+    "requiredPerQuestion": 3,
+    "questions": [
+      {
+        "q": "Fondation légendaire de la ville de Rome ?",
+        "a": "753 av. J.-C.",
+        "options": ["753 av. J.-C.", "509 av. J.-C.", "27 av. J.-C.", "212 ap. J.-C."]
+      },
+      {
+        "q": "Mise en place de la République romaine (fin de la royauté) ?",
+        "a": "509 av. J.-C.",
+        "options": ["509 av. J.-C.", "753 av. J.-C.", "27 av. J.-C.", "476 ap. J.-C."]
+      },
+      {
+        "q": "Début de l'Empire romain avec Auguste ?",
+        "a": "27 av. J.-C.",
+        "options": ["27 av. J.-C.", "31 av. J.-C.", "212 ap. J.-C.", "395 ap. J.-C."]
+      },
+      {
+        "q": "Bataille navale qui oppose Octave à Antoine et Cléopâtre et assure la victoire d'Auguste ?",
+        "a": "Actium",
+        "options": ["Actium", "Salamine", "Marathon", "Thapsus"]
+      },
+      {
+        "q": "Édit de Caracalla accordant la citoyenneté romaine à presque tous les hommes libres de l'Empire ?",
+        "a": "212 ap. J.-C.",
+        "options": ["212 ap. J.-C.", "313 ap. J.-C.", "395 ap. J.-C.", "476 ap. J.-C."]
+      },
+      {
+        "q": "Grande victoire navale des Grecs sur les Perses en 480 av. J.-C. ?",
+        "a": "Salamine",
+        "options": ["Salamine", "Marathon", "Actium", "Cannes"]
+      }
+    ]
+  },
+  {
+    "id": "ch2-lvl3-2de",
+    "chapterId": "ch2-starship",
+    "title": "Chapitre 2 - Niveau 3 (Institutions et sociétés)",
+    "requiredPerQuestion": 3,
+    "questions": [
+      {
+        "q": "Dans la démocratie athénienne, comment s'appelle l'assemblée des citoyens ?",
+        "a": "l'Ecclésia",
+        "options": ["l'Ecclésia", "le Sénat", "le Conseil des Cinq-Cents", "le triumvirat"]
+      },
+      {
+        "q": "À Athènes, quels habitants n'ont PAS la citoyenneté ?",
+        "a": "les femmes, les esclaves et les métèques",
+        "options": [
+          "les femmes, les esclaves et les métèques",
+          "les hommes adultes nés de parents citoyens",
+          "tous les habitants sans exception",
+          "uniquement les esclaves"
+        ]
+      },
+      {
+        "q": "Comment appelle-t-on le processus par lequel Rome diffuse sa langue, ses lois et sa culture dans l'Empire ?",
+        "a": "romanisation",
+        "options": ["romanisation", "hellénisation", "christianisation", "féodalisation"]
+      },
+      {
+        "q": "Comment s'appelle l'assemblée politique la plus importante à Rome sous la République ?",
+        "a": "le Sénat",
+        "options": ["le Sénat", "l'Ecclésia", "la Boulè", "le Conseil impérial"]
+      },
+      {
+        "q": "Quel groupe social est au sommet de la société romaine ?",
+        "a": "les citoyens riches (aristocratie sénatoriale et chevaliers)",
+        "options": [
+          "les citoyens riches (aristocratie sénatoriale et chevaliers)",
+          "les esclaves",
+          "les métèques",
+          "les paysans sans terres"
+        ]
+      },
+      {
+        "q": "Comment appelle-t-on les habitants de l'Empire qui ne sont pas citoyens romains avant l'édit de Caracalla ?",
+        "a": "les pérégrins",
+        "options": ["les pérégrins", "les patriciens", "les plébéiens", "les colons"]
       }
     ]
   }
