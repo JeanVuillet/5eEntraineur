@@ -1,7 +1,5 @@
 // --- SECTION 0: UI Références & State ---
 const $ = (sel) => document.querySelector(sel);
-
-// Références générales
 const studentBadge = $("#studentBadge"),
   logoutBtn = $("#logoutBtn");
 const registerCard = $("#registerCard"),
@@ -10,9 +8,8 @@ const registerCard = $("#registerCard"),
 const form = $("#registerForm"),
   startBtn = $("#startBtn"),
   formMsg = $("#formMsg");
-
-// Références du jeu
 const gameModuleContainer = $("#gameModuleContainer");
+const timerBar = $("#timer-bar"); // **AJOUT**
 const levelTitle = $("#levelTitle"),
   livesWrap = $("#lives"),
   mainBar = $("#mainBar"),
@@ -23,15 +20,11 @@ const overlay = $("#overlay"),
 const correctionOverlay = $("#correctionOverlay"),
   correctionText = $("#correctionText"),
   closeCorrectionBtn = $("#closeCorrectionBtn");
-
-// Références du Tableau de Bord Professeur
 const profDashboard = $("#profDashboard");
 const playersBody = $("#playersBody");
 const classFilter = $("#classFilter");
 const resetAllBtn = $("#resetAllBtn");
 const studentSearch = $("#studentSearch");
-
-// Variables d'état
 let isProfessorMode = false,
   isImpersonating = false;
 const saved = JSON.parse(localStorage.getItem("player") || "null");
@@ -48,19 +41,63 @@ let currentGameModuleInstance = null;
 let allPlayersData = [];
 let allQuestionsData = {};
 
-// --- SECTION 1: Logique de connexion et de navigation ---
-function showStudent(stu) {
-  studentBadge.textContent = `${stu.firstName} ${stu.lastName} – ${stu.classroom}`;
-  $("#welcomeText").textContent = `Bienvenue ${stu.firstName} !`;
-  logoutBtn.style.display = "block";
+// ===== NOUVELLES VARIABLES POUR LE TIMER =====
+const LEVEL_DURATION_SECONDS = 120;
+let levelTimerInterval = null;
+let levelTimeRemaining = 0;
+
+// ===== NOUVELLES FONCTIONS =====
+function startLevelTimer() {
+  stopLevelTimer();
+  levelTimeRemaining = LEVEL_DURATION_SECONDS;
+  timerBar.style.transition = 'width 1s linear';
+  timerBar.style.width = '100%';
+  levelTimerInterval = setInterval(() => {
+    levelTimeRemaining--;
+    const percentage = Math.max(0, (levelTimeRemaining / LEVEL_DURATION_SECONDS) * 100);
+    timerBar.style.width = `${percentage}%`;
+    if (levelTimeRemaining <= 0) {
+      stopLevelTimer();
+      if (currentGameModuleInstance) currentGameModuleInstance.resetAnimation();
+      wrongAnswerFlow(null);
+    }
+  }, 1000);
+}
+function stopLevelTimer() {
+  clearInterval(levelTimerInterval);
+  levelTimerInterval = null;
+}
+function showLevelCompleteNotification(grade) {
+    const notif = document.createElement('div');
+    notif.id = 'level-recap-notification';
+    notif.textContent = `Niveau terminé ! Score : ${grade}`;
+    if (grade === 'A+') notif.style.backgroundColor = '#14532d';
+    else if (grade === 'A') notif.style.backgroundColor = '#16a34a';
+    else if (grade === 'B') notif.style.backgroundColor = '#f59e0b';
+    else notif.style.backgroundColor = '#b91c1c';
+    document.body.appendChild(notif);
+    setTimeout(() => {
+      notif.style.opacity = '1';
+      notif.style.top = '50px';
+    }, 100);
+    setTimeout(() => {
+      notif.style.opacity = '0';
+      notif.style.top = '20px';
+      setTimeout(() => notif.remove(), 500);
+    }, 3000);
 }
 
+// --- Le reste de votre code, avec 3 modifications ---
+function showStudent(stu) {
+  studentBadge.textContent = `${stu.firstName} ${stu.lastName} – ${stu.classroom}`;
+  if ($("#welcomeText")) $("#welcomeText").textContent = `Bienvenue ${stu.firstName} !`;
+  logoutBtn.style.display = "block";
+}
 function logout() {
   localStorage.removeItem("player");
   window.location.reload();
 }
 logoutBtn.addEventListener("click", logout);
-
 async function loadQuestions(classKey) {
   try {
     const filePath = `/questions/questions-${classKey}.json`;
@@ -74,63 +111,39 @@ async function loadQuestions(classKey) {
     levels = [];
   }
 }
-
 async function updateChapterSelectionUI(player) {
     const classKey = getClassKey(player.classroom);
-    // On s'assure que les données globales sont chargées
     if (!window.allQuestionsData || Object.keys(window.allQuestionsData).length === 0) {
         await loadAllQuestionsForProf(); 
     }
     const allLevelsForClass = window.allQuestionsData[classKey] || [];
-    
     document.querySelectorAll('.chapter-box').forEach(chapterBox => {
         const oldProgress = chapterBox.querySelector('.chapter-progress-container');
         if (oldProgress) oldProgress.remove();
-
         const chapterId = chapterBox.dataset.chapter;
         const levelsInThisChapter = allLevelsForClass.filter(level => level.chapterId === chapterId);
         if (levelsInThisChapter.length === 0) return;
-
         const validatedLevelsInChapter = levelsInThisChapter.filter(level => (player.validatedLevels || []).includes(level.id));
-        
         const totalQuestionsInChapter = levelsInThisChapter.reduce((acc, level) => acc + level.questions.length, 0);
-        const validatedQuestionsInChapter = (player.validatedQuestions || []).filter(qId => {
+        const validatedQuestionsInChapter = (player.validatedLevels || []).filter(qId => {
             return levelsInThisChapter.some(level => qId.startsWith(level.id));
         }).length;
-
         let progressHtml = '';
-
         if (validatedLevelsInChapter.length >= levelsInThisChapter.length) {
             progressHtml = `<div class="chapter-progress-badge" style="background-color: #f59e0b; color: white;">🏆 Terminé</div>`;
-        } else {
+        } else if (levelsInThisChapter[validatedLevelsInChapter.length]) {
             const currentLevel = levelsInThisChapter[validatedLevelsInChapter.length];
             const validatedQuestionsInLevel = (player.validatedQuestions || []).filter(qId => qId.startsWith(currentLevel.id)).length;
             const totalQuestionsInLevel = currentLevel.questions.length;
-
-            progressHtml = `
-                <div style="font-size: 13px; color: var(--muted); margin-bottom: 4px;">${currentLevel.title}</div>
-                <div class="chapter-progress-bar">
-                    <div style="width: ${(validatedQuestionsInLevel / totalQuestionsInLevel) * 100}%;"></div>
-                </div>
-                <div class="chapter-progress-text">${validatedQuestionsInLevel} / ${totalQuestionsInLevel}</div>
-            `;
+            progressHtml = `<div style="font-size: 13px; color: var(--muted); margin-bottom: 4px;">${currentLevel.title}</div><div class="chapter-progress-bar"><div style="width: ${(validatedQuestionsInLevel / totalQuestionsInLevel) * 100}%;"></div></div><div class="chapter-progress-text">${validatedQuestionsInLevel} / ${totalQuestionsInLevel}</div>`;
         }
-        
-        const summaryHtml = `
-            <div class="chapter-summary">
-                <div><strong>Niveaux :</strong> ${validatedLevelsInChapter.length} / ${levelsInThisChapter.length}</div>
-                <div><strong>Questions :</strong> ${validatedQuestionsInChapter} / ${totalQuestionsInChapter}</div>
-            </div>
-        `;
-
+        const summaryHtml = `<div class="chapter-summary"><div><strong>Niveaux :</strong> ${validatedLevelsInChapter.length} / ${levelsInThisChapter.length}</div><div><strong>Questions :</strong> ${validatedQuestionsInChapter} / ${totalQuestionsInChapter}</div></div>`;
         const progressContainer = document.createElement('div');
         progressContainer.className = 'chapter-progress-container';
         progressContainer.innerHTML = progressHtml + summaryHtml;
         chapterBox.appendChild(progressContainer);
     });
 }
-
-
 (async () => {
   if (saved && saved.id) {
     showStudent(saved);
@@ -146,9 +159,7 @@ async function updateChapterSelectionUI(player) {
         if (!res.ok) throw new Error("Progression de l'élève non trouvée");
         const progressData = await res.json();
         const fullPlayerData = { ...saved, ...progressData };
-        
         await updateChapterSelectionUI(fullPlayerData);
-        
       } catch(err) {
           console.error("Impossible de charger la progression de l'élève:", err);
       }
@@ -158,7 +169,6 @@ async function updateChapterSelectionUI(player) {
     registerCard.style.display = "block";
   }
 })();
-
 chapterSelection.addEventListener("click", async (e) => {
   const chapterBox = e.target.closest(".chapter-box");
   if (chapterBox && !chapterBox.classList.contains("disabled")) {
@@ -167,20 +177,16 @@ chapterSelection.addEventListener("click", async (e) => {
     await loadChapter(chapter, questionsKey, templateId, gameClass);
   }
 });
-
 async function loadChapter(chapterId, questionsKey, templateId, gameClass) {
   chapterSelection.style.display = "none";
   game.style.display = "block";
   gameModuleContainer.innerHTML = "Chargement du chapitre...";
-
   await loadQuestions(questionsKey);
   levels = levels.filter(level => level.chapterId === chapterId);
-
   if (levels.length === 0) {
     gameModuleContainer.innerHTML = `<p class="error">Aucun niveau trouvé pour ce chapitre et cette classe.</p>`;
     return;
   }
-
   try {
     const response = await fetch(`chapitres/${chapterId}.html`);
     if (!response.ok) throw new Error(`Module ${chapterId}.html introuvable.`);
@@ -201,7 +207,7 @@ async function loadChapter(chapterId, questionsKey, templateId, gameClass) {
     };
     if (typeof window[gameClass] === "function") {
       currentGameModuleInstance = new window[gameClass](gameModuleContainer, controller);
-      initQuiz(); // On lance le quiz APRÈS avoir créé l'instance
+      initQuiz();
     } else {
       throw new Error(`La classe du jeu '${gameClass}' n'a pas été trouvée.`);
     }
@@ -210,7 +216,6 @@ async function loadChapter(chapterId, questionsKey, templateId, gameClass) {
     gameModuleContainer.innerHTML = `<p class="error">Impossible de charger le chapitre.</p>`;
   }
 }
-
 form?.addEventListener("submit", async (e) => {
   e.preventDefault();
   formMsg.textContent = "";
@@ -241,7 +246,6 @@ form?.addEventListener("submit", async (e) => {
     startBtn.disabled = false;
   }
 });
-
 $("#validateProfPasswordBtn")?.addEventListener("click", () => {
   if ($("#profPassword").value === "Clemenceau1919") {
     localStorage.setItem("player", JSON.stringify({ id: "prof", firstName: "Jean", lastName: "Vuillet", classroom: "Professeur" }));
@@ -250,8 +254,6 @@ $("#validateProfPasswordBtn")?.addEventListener("click", () => {
     $("#profPasswordMsg").textContent = "Mot de passe incorrect.";
   }
 });
-
-// --- SECTION 2: Logique principale du Quiz ---
 async function initQuiz() {
   if (levels.length > 0) {
     let playerProgress = { validatedLevels: [] };
@@ -263,7 +265,7 @@ async function initQuiz() {
     setupLevel(validatedLevelsInThisChapter.length);
   }
 }
-
+// **MODIFICATION 1**
 function setupLevel(idx) {
   currentLevel = idx;
   if(!levels[currentLevel]) {
@@ -285,10 +287,10 @@ function setupLevel(idx) {
     bar.addEventListener("click", () => handleBarClick(i));
     subBarsContainer.appendChild(bar);
   });
+  startLevelTimer(); // Ajout
   updateBars();
   nextQuestion(false);
 }
-
 function updateBars() {
   if (!levels[currentLevel]) return;
   const lvl = levels[currentLevel];
@@ -301,7 +303,6 @@ function updateBars() {
     if (bar) bar.style.width = (Math.min(localScores[i], req) / req) * 100 + "%";
   });
 }
-
 function findNextIndex(fromIdx) {
   const lvl = levels[currentLevel];
   const n = lvl.questions.length;
@@ -309,7 +310,7 @@ function findNextIndex(fromIdx) {
   for (let i = 0; i <= fromIdx; i++) if (localScores[i] < lvl.requiredPerQuestion) return i;
   return null;
 }
-
+// **MODIFICATION 2**
 async function nextQuestion(keepAnimation) {
   if (currentGameModuleInstance && !keepAnimation) {
     currentGameModuleInstance.resetAnimation();
@@ -317,12 +318,22 @@ async function nextQuestion(keepAnimation) {
   locked = false;
   const lvl = levels[currentLevel];
   if (general >= lvl.questions.length) {
+    stopLevelTimer();
+    const remainingPercentage = levelTimeRemaining / LEVEL_DURATION_SECONDS;
+    let grade;
+    if (remainingPercentage >= 0.75) grade = 'A+';
+    else if (remainingPercentage >= 0.50) grade = 'A';
+    else if (remainingPercentage >= 0.25) grade = 'B';
+    else grade = 'C';
+    showLevelCompleteNotification(grade);
     await saveProgress("level", lvl.id);
-    if (currentLevel < levels.length - 1) {
-      setupLevel(currentLevel + 1);
-    } else {
-      gameModuleContainer.innerHTML = "<h1>🎉 Félicitations, tu as terminé ce chapitre !</h1><button onclick='window.location.reload()'>Retour</button>";
-    }
+    setTimeout(() => {
+        if (currentLevel < levels.length - 1) {
+          setupLevel(currentLevel + 1);
+        } else {
+          gameModuleContainer.innerHTML = "<h1>🎉 Félicitations, tu as terminé ce chapitre !</h1><button onclick='window.location.reload()'>Retour</button>";
+        }
+    }, 3500);
     return;
   }
   currentIndex = findNextIndex(currentIndex);
@@ -331,7 +342,6 @@ async function nextQuestion(keepAnimation) {
     currentGameModuleInstance.startAnimation();
   }
 }
-
 function renderQuestion() {
   if (currentIndex === null) return;
   const questionData = levels[currentLevel].questions[currentIndex];
@@ -341,7 +351,6 @@ function renderQuestion() {
     console.error("Le module de jeu actuel n'a pas de méthode 'loadQuestion' !");
   }
 }
-
 function wrongAnswerFlow(q) {
   if (currentGameModuleInstance) currentGameModuleInstance.resetAnimation();
   decreaseLives();
@@ -355,12 +364,10 @@ function wrongAnswerFlow(q) {
     }
   }
 }
-
 closeCorrectionBtn.addEventListener("click", () => {
   correctionOverlay.style.display = "none";
   nextQuestion(true);
 });
-
 function incrementProgress(v) {
   const lvl = levels[currentLevel];
   const req = lvl.requiredPerQuestion;
@@ -372,7 +379,6 @@ function incrementProgress(v) {
   }
   updateBars();
 }
-
 function renderLives() {
   livesWrap.innerHTML = "";
   for (let i = 0; i < MAX_LIVES; i++) {
@@ -381,22 +387,21 @@ function renderLives() {
     livesWrap.appendChild(h);
   }
 }
-
+// **MODIFICATION 3**
 function decreaseLives() {
   lives = Math.max(0, lives - 1);
   renderLives();
   if (lives === 0) {
+    stopLevelTimer(); // Ajout
     if (currentGameModuleInstance) currentGameModuleInstance.resetAnimation();
     overlay.style.display = "flex";
   }
 }
-
 restartBtn.addEventListener("click", () => {
+  stopLevelTimer(); // Ajout
   overlay.style.display = "none";
   setupLevel(currentLevel);
 });
-
-// --- SECTION 3: Logique du Tableau de Bord Professeur ---
 async function fetchPlayers() {
   if (!profDashboard) return;
   profDashboard.style.display = "block";
@@ -418,7 +423,6 @@ async function fetchPlayers() {
     table.appendChild(errorTbody);
   }
 }
-
 function generateLevelProgressHtml(level, validatedQuestions) {
   if (!level) return 'N/A';
   const totalQuestions = level.questions.length;
@@ -432,7 +436,6 @@ function generateLevelProgressHtml(level, validatedQuestions) {
   html += `</div>`;
   return html;
 }
-
 function renderPlayers(playersToRender) {
   const table = $("#playersTable");
   table.querySelectorAll('tbody').forEach(tbody => tbody.remove());
@@ -481,7 +484,6 @@ function renderPlayers(playersToRender) {
     table.appendChild(playerTbody);
   });
 }
-
 async function loadAllQuestionsForProf() {
   const keys = ["5e", "6e", "2de"];
   try {
@@ -491,7 +493,6 @@ async function loadAllQuestionsForProf() {
     window.allQuestionsData = allQuestionsData;
   } catch (err) { console.error("Impossible de pré-charger les questions.", err); }
 }
-
 function applyFiltersAndRender() {
   let filtered = [...allPlayersData];
   const selectedClass = classFilter ? classFilter.value : "all";
@@ -504,17 +505,14 @@ function applyFiltersAndRender() {
   }
   renderPlayers(filtered);
 }
-
 classFilter?.addEventListener("change", applyFiltersAndRender);
 studentSearch?.addEventListener("input", applyFiltersAndRender);
-
 resetAllBtn?.addEventListener("click", async () => {
   if (confirm("⚠️ ATTENTION ! ⚠️\nRéinitialiser TOUS les élèves ?")) {
     await fetch("/api/reset-all-players", { method: "POST" });
     fetchPlayers();
   }
 });
-
 playersBody?.addEventListener("click", async (e) => {
   const target = e.target;
   if (target.matches(".reset-btn")) {
@@ -525,8 +523,6 @@ playersBody?.addEventListener("click", async (e) => {
     }
   }
 });
-
-// --- SECTION 4: Utilitaires et Fonctions Spécifiques ---
 function getClassKey(classroom) {
   if (!classroom) return null;
   const cls = classroom.toUpperCase();
@@ -535,7 +531,6 @@ function getClassKey(classroom) {
   if (cls.startsWith("2")) return "2de";
   return null;
 }
-
 let isRKeyDown = false, isTKeyDown = false;
 document.addEventListener("keydown", (e) => {
   if (e.key.toLowerCase() === "r") isRKeyDown = true;
@@ -545,7 +540,6 @@ document.addEventListener("keyup", (e) => {
   if (e.key.toLowerCase() === "r") isRKeyDown = false;
   if (e.key.toLowerCase() === "t") isTKeyDown = false;
 });
-
 async function handleBarClick(questionIndex) {
   if (locked || !(isRKeyDown && isTKeyDown)) return;
   locked = true;
@@ -573,7 +567,6 @@ async function handleBarClick(questionIndex) {
   }
   locked = false;
 }
-
 async function saveProgress(progressType, value) {
   if (!currentPlayerId || currentPlayerId === "prof") return false;
   try {
