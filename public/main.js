@@ -9,7 +9,6 @@ const form = $("#registerForm"),
   startBtn = $("#startBtn"),
   formMsg = $("#formMsg");
 const gameModuleContainer = $("#gameModuleContainer");
-const timerBar = $("#timer-bar"); // **AJOUT**
 const levelTitle = $("#levelTitle"),
   livesWrap = $("#lives"),
   mainBar = $("#mainBar"),
@@ -41,53 +40,7 @@ let currentGameModuleInstance = null;
 let allPlayersData = [];
 let allQuestionsData = {};
 
-// ===== NOUVELLES VARIABLES POUR LE TIMER =====
-const LEVEL_DURATION_SECONDS = 120;
-let levelTimerInterval = null;
-let levelTimeRemaining = 0;
-
-// ===== NOUVELLES FONCTIONS =====
-function startLevelTimer() {
-  stopLevelTimer();
-  levelTimeRemaining = LEVEL_DURATION_SECONDS;
-  timerBar.style.transition = 'width 1s linear';
-  timerBar.style.width = '100%';
-  levelTimerInterval = setInterval(() => {
-    levelTimeRemaining--;
-    const percentage = Math.max(0, (levelTimeRemaining / LEVEL_DURATION_SECONDS) * 100);
-    timerBar.style.width = `${percentage}%`;
-    if (levelTimeRemaining <= 0) {
-      stopLevelTimer();
-      if (currentGameModuleInstance) currentGameModuleInstance.resetAnimation();
-      wrongAnswerFlow(null);
-    }
-  }, 1000);
-}
-function stopLevelTimer() {
-  clearInterval(levelTimerInterval);
-  levelTimerInterval = null;
-}
-function showLevelCompleteNotification(grade) {
-    const notif = document.createElement('div');
-    notif.id = 'level-recap-notification';
-    notif.textContent = `Niveau terminé ! Score : ${grade}`;
-    if (grade === 'A+') notif.style.backgroundColor = '#14532d';
-    else if (grade === 'A') notif.style.backgroundColor = '#16a34a';
-    else if (grade === 'B') notif.style.backgroundColor = '#f59e0b';
-    else notif.style.backgroundColor = '#b91c1c';
-    document.body.appendChild(notif);
-    setTimeout(() => {
-      notif.style.opacity = '1';
-      notif.style.top = '50px';
-    }, 100);
-    setTimeout(() => {
-      notif.style.opacity = '0';
-      notif.style.top = '20px';
-      setTimeout(() => notif.remove(), 500);
-    }, 3000);
-}
-
-// --- Le reste de votre code, avec 3 modifications ---
+// --- SECTION 1: Logique de connexion et de navigation ---
 function showStudent(stu) {
   studentBadge.textContent = `${stu.firstName} ${stu.lastName} – ${stu.classroom}`;
   if ($("#welcomeText")) $("#welcomeText").textContent = `Bienvenue ${stu.firstName} !`;
@@ -125,7 +78,7 @@ async function updateChapterSelectionUI(player) {
         if (levelsInThisChapter.length === 0) return;
         const validatedLevelsInChapter = levelsInThisChapter.filter(level => (player.validatedLevels || []).includes(level.id));
         const totalQuestionsInChapter = levelsInThisChapter.reduce((acc, level) => acc + level.questions.length, 0);
-        const validatedQuestionsInChapter = (player.validatedLevels || []).filter(qId => {
+        const validatedQuestionsInChapter = (player.validatedQuestions || []).filter(qId => {
             return levelsInThisChapter.some(level => qId.startsWith(level.id));
         }).length;
         let progressHtml = '';
@@ -265,7 +218,6 @@ async function initQuiz() {
     setupLevel(validatedLevelsInThisChapter.length);
   }
 }
-// **MODIFICATION 1**
 function setupLevel(idx) {
   currentLevel = idx;
   if(!levels[currentLevel]) {
@@ -287,7 +239,6 @@ function setupLevel(idx) {
     bar.addEventListener("click", () => handleBarClick(i));
     subBarsContainer.appendChild(bar);
   });
-  startLevelTimer(); // Ajout
   updateBars();
   nextQuestion(false);
 }
@@ -310,7 +261,6 @@ function findNextIndex(fromIdx) {
   for (let i = 0; i <= fromIdx; i++) if (localScores[i] < lvl.requiredPerQuestion) return i;
   return null;
 }
-// **MODIFICATION 2**
 async function nextQuestion(keepAnimation) {
   if (currentGameModuleInstance && !keepAnimation) {
     currentGameModuleInstance.resetAnimation();
@@ -318,22 +268,12 @@ async function nextQuestion(keepAnimation) {
   locked = false;
   const lvl = levels[currentLevel];
   if (general >= lvl.questions.length) {
-    stopLevelTimer();
-    const remainingPercentage = levelTimeRemaining / LEVEL_DURATION_SECONDS;
-    let grade;
-    if (remainingPercentage >= 0.75) grade = 'A+';
-    else if (remainingPercentage >= 0.50) grade = 'A';
-    else if (remainingPercentage >= 0.25) grade = 'B';
-    else grade = 'C';
-    showLevelCompleteNotification(grade);
     await saveProgress("level", lvl.id);
-    setTimeout(() => {
-        if (currentLevel < levels.length - 1) {
-          setupLevel(currentLevel + 1);
-        } else {
-          gameModuleContainer.innerHTML = "<h1>🎉 Félicitations, tu as terminé ce chapitre !</h1><button onclick='window.location.reload()'>Retour</button>";
-        }
-    }, 3500);
+    if (currentLevel < levels.length - 1) {
+      setupLevel(currentLevel + 1);
+    } else {
+      gameModuleContainer.innerHTML = "<h1>🎉 Félicitations, tu as terminé ce chapitre !</h1><button onclick='window.location.reload()'>Retour</button>";
+    }
     return;
   }
   currentIndex = findNextIndex(currentIndex);
@@ -387,18 +327,15 @@ function renderLives() {
     livesWrap.appendChild(h);
   }
 }
-// **MODIFICATION 3**
 function decreaseLives() {
   lives = Math.max(0, lives - 1);
   renderLives();
   if (lives === 0) {
-    stopLevelTimer(); // Ajout
     if (currentGameModuleInstance) currentGameModuleInstance.resetAnimation();
     overlay.style.display = "flex";
   }
 }
 restartBtn.addEventListener("click", () => {
-  stopLevelTimer(); // Ajout
   overlay.style.display = "none";
   setupLevel(currentLevel);
 });
