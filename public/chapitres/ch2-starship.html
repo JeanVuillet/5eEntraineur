@@ -1,11 +1,7 @@
 <template id="template-starship-game">
   <style>
-    /* ========================================================== */
-    /* --- CORRECTION APPLIQUÉE ICI --- */
-    /* On réduit la marge verticale pour rapprocher la question du jeu */
-    /* ========================================================== */
     .question-zone { 
-      margin: 8px 0; /* Était 16px 0 */
+      margin: 8px 0;
       font-size: 1.5em; 
       text-align: center; 
       min-height: 2.5em; 
@@ -13,7 +9,8 @@
     
     #starship-game-area {
       position: relative;
-      height: clamp(400px, 60vh, 700px); 
+      /* Hauteur réduite pour mieux voir la barre de temps au-dessus */
+      height: clamp(320px, 50vh, 550px); 
       background: #0c0a18;
       border-radius: 12px;
       overflow: hidden;
@@ -21,10 +18,45 @@
       margin-top: 10px;
     }
     
-    #ship { position: absolute; bottom: 10px; left: 50%; width: 60px; height: 60px; transform: translateX(-50%); background: url('/images/ship.png') center/contain no-repeat; transition: left 0.1s linear; }
-    .falling-answer { position: absolute; top: -80px; padding: 10px 20px; background: #333; color: white; border: 2px solid #00f2ff; border-radius: 8px; font-weight: bold; animation: fall 30s linear forwards; }
-    @keyframes fall { from { top: -80px; } to { top: 100%; } }
-    .missile { position: absolute; width: 8px; height: 25px; background-color: #ffeb3b; border-radius: 4px; box-shadow: 0 0 10px #ffeb3b; }
+    #ship {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      width: 60px;
+      height: 60px;
+      transform: translateX(-50%);
+      background: url('/images/ship.png') center/contain no-repeat;
+      transition: left 0.1s linear;
+    }
+
+    .falling-answer {
+      position: absolute;
+      top: -80px;
+      padding: 10px 20px;
+      background: #333;
+      color: white;
+      border: 2px solid #00f2ff;
+      border-radius: 8px;
+      font-weight: bold;
+      /* Chaque réponse est centrée sur sa “voie” horizontale */
+      transform: translateX(-50%);
+      animation: fall linear forwards;
+      white-space: nowrap;
+    }
+
+    @keyframes fall {
+      from { top: -80px; }
+      to { top: 100%; }
+    }
+
+    .missile {
+      position: absolute;
+      width: 8px;
+      height: 25px;
+      background-color: #ffeb3b;
+      border-radius: 4px;
+      box-shadow: 0 0 10px #ffeb3b;
+    }
   </style>
   
   <div id="question" class="question-zone"></div>
@@ -34,7 +66,185 @@
 </template>
 
 <script>
-// Le script JavaScript reste exactement le même
-class StarshipGame{constructor(t,e){this.container=t,this.controller=e,this.gameArea=t.querySelector("#starship-game-area"),this.ship=t.querySelector("#ship"),this.questionElement=t.querySelector("#question"),this.missiles=[],this.answers=[],this.currentQuestion=null,this.animationFrameId=null,this.timeoutId=null,this.bindControls()}loadQuestion(t){this.currentQuestion=t,this.questionElement.textContent=t.q,this.clearObjects(),this.spawnAnswers()}bindControls(){document.addEventListener("keydown",t=>{if(this.controller.getState().isLocked)return;"ArrowLeft"===t.key&&this.moveShip(-40),"ArrowRight"===t.key&&this.moveShip(40),"Space"===t.code&&(t.preventDefault(),this.shoot())})}moveShip(t){const e=this.ship.offsetLeft+t,o=this.gameArea.offsetWidth-this.ship.offsetWidth;this.ship.style.left=Math.max(0,Math.min(o,e))+"px"}shoot(){if(this.missiles.length>3)return;const t=document.createElement("div");t.className="missile",t.style.left=this.ship.offsetLeft+this.ship.offsetWidth/2-4+"px",t.style.bottom="70px",this.gameArea.appendChild(t),this.missiles.push(t)}spawnAnswers(){let t=[10,25,40,55,70,85].sort(()=>.5-Math.random());this.currentQuestion.options.forEach((e,o)=>{const i=document.createElement("div");i.className="falling-answer",i.style.left=`${t[o]}%`,i.style.animationDelay=`${2*Math.random()}s`,i.textContent=e,e===this.currentQuestion.a&&(i.dataset.isCorrect="true"),this.gameArea.appendChild(i),this.answers.push(i)}),this.timeoutId=setTimeout(()=>{this.answers.find(t=>"true"===t.dataset.isCorrect)&&(this.resetAnimation(),this.controller.notifyWrongAnswer(null))},30500)}gameLoop(){this.updateMissiles(),this.checkCollisions(),this.animationFrameId=requestAnimationFrame(()=>this.gameLoop())}updateMissiles(){for(let t=this.missiles.length-1;t>=0;t--){const e=this.missiles[t];let o=parseFloat(e.style.bottom);e.style.bottom=o+10+"px",o>this.gameArea.offsetHeight&&(e.remove(),this.missiles.splice(t,1))}}checkCollisions(){for(let t=this.missiles.length-1;t>=0;t--)for(let e=this.answers.length-1;e>=0;e--){const o=this.missiles[t],i=this.answers[e];if(this.isColliding(o,i)){this.resetAnimation();const t=i.textContent===this.currentQuestion.a;return t?this.controller.notifyCorrectAnswer():(localScores[currentIndex]=Math.max(0,localScores[currentIndex]-1),updateBars(),void this.controller.notifyWrongAnswer(this.currentQuestion))}}}isColliding(t,e){const o=t.getBoundingClientRect(),i=e.getBoundingClientRect();return!(o.right<i.left||o.left>i.right||o.bottom<i.top||o.top>i.bottom)}clearObjects(){this.timeoutId&&(clearTimeout(this.timeoutId),this.timeoutId=null),this.answers.forEach(t=>t.remove()),this.missiles.forEach(t=>t.remove()),this.answers=[],this.missiles=[]}startAnimation(){this.gameLoop()}resetAnimation(){cancelAnimationFrame(this.animationFrameId),this.clearObjects()}}
-window.StarshipGame=StarshipGame;
+/**
+ * Jeu Starship : les réponses tombent, le joueur tire avec [ESPACE].
+ * On synchronise la vitesse de chute et le timeout via STARSHIP_FALL_DURATION.
+ * On a RALENTI la chute (~ +40% de durée).
+ */
+const STARSHIP_FALL_DURATION = 65000; // 65s ≈ vitesse réduite de ~40%
+
+class StarshipGame {
+  constructor(container, controller) {
+    this.container = container;
+    this.controller = controller;
+
+    this.gameArea = container.querySelector("#starship-game-area");
+    this.ship = container.querySelector("#ship");
+    this.questionElement = container.querySelector("#question");
+
+    this.missiles = [];
+    this.answers = [];
+    this.currentQuestion = null;
+    this.animationFrameId = null;
+    this.timeoutId = null;
+
+    this.bindControls();
+  }
+
+  loadQuestion(question) {
+    this.currentQuestion = question;
+    this.questionElement.textContent = question.q;
+    this.clearObjects();
+    this.spawnAnswers();
+  }
+
+  bindControls() {
+    document.addEventListener("keydown", (e) => {
+      if (this.controller.getState().isLocked) return;
+
+      if (e.key === "ArrowLeft") this.moveShip(-40);
+      if (e.key === "ArrowRight") this.moveShip(40);
+      if (e.code === "Space") {
+        e.preventDefault();
+        this.shoot();
+      }
+    });
+  }
+
+  moveShip(delta) {
+    const newLeft = this.ship.offsetLeft + delta;
+    const maxLeft = this.gameArea.offsetWidth - this.ship.offsetWidth;
+    this.ship.style.left = Math.max(0, Math.min(maxLeft, newLeft)) + "px";
+  }
+
+  shoot() {
+    if (this.missiles.length > 3) return;
+
+    const missile = document.createElement("div");
+    missile.className = "missile";
+    missile.style.left = this.ship.offsetLeft + this.ship.offsetWidth / 2 - 4 + "px";
+    missile.style.bottom = "70px";
+
+    this.gameArea.appendChild(missile);
+    this.missiles.push(missile);
+  }
+
+  spawnAnswers() {
+    const opts = this.currentQuestion.options;
+    const n = opts.length;
+
+    opts.forEach((opt, index) => {
+      const answerEl = document.createElement("div");
+      answerEl.className = "falling-answer";
+
+      // 🔥 VOIE DÉDIÉE POUR CHAQUE RÉPONSE
+      const lanePercent = ((index + 1) / (n + 1)) * 100;
+      answerEl.style.left = lanePercent + "%";
+
+      // 🔥 Moins d’attente avant l’apparition : max 0,5 s
+      answerEl.style.animationDelay = `${0.5 * Math.random()}s`;
+
+      // 🔥 Chute ralentie (durée augmentée)
+      answerEl.style.animationDuration = (STARSHIP_FALL_DURATION / 1000) + "s";
+
+      answerEl.textContent = opt;
+
+      if (opt === this.currentQuestion.a) {
+        answerEl.dataset.isCorrect = "true";
+      }
+
+      this.gameArea.appendChild(answerEl);
+      this.answers.push(answerEl);
+    });
+
+    // Quand la bonne réponse est arrivée en bas sans être touchée → faux (sans ouvrir le panneau rouge)
+    this.timeoutId = setTimeout(() => {
+      const hasCorrect = this.answers.find(a => a.dataset.isCorrect === "true");
+      if (hasCorrect) {
+        this.resetAnimation();
+        // On garde la logique : mauvaise réponse silencieuse (perte de vie mais pas de panneau)
+        this.controller.notifyWrongAnswer(null);
+      }
+    }, STARSHIP_FALL_DURATION + 500);
+  }
+
+  gameLoop() {
+    this.updateMissiles();
+    this.checkCollisions();
+    this.animationFrameId = requestAnimationFrame(() => this.gameLoop());
+  }
+
+  updateMissiles() {
+    for (let i = this.missiles.length - 1; i >= 0; i--) {
+      const m = this.missiles[i];
+      let bottom = parseFloat(m.style.bottom);
+      bottom += 10;
+      m.style.bottom = bottom + "px";
+
+      if (bottom > this.gameArea.offsetHeight) {
+        m.remove();
+        this.missiles.splice(i, 1);
+      }
+    }
+  }
+
+  checkCollisions() {
+    for (let i = this.missiles.length - 1; i >= 0; i--) {
+      for (let j = this.answers.length - 1; j >= 0; j--) {
+        const missile = this.missiles[i];
+        const answer = this.answers[j];
+
+        if (this.isColliding(missile, answer)) {
+          this.resetAnimation();
+
+          const isCorrect = answer.textContent === this.currentQuestion.a;
+          if (isCorrect) {
+            this.controller.notifyCorrectAnswer();
+          } else {
+            // 👉 C’est ICI que ton "div faux" doit s’ouvrir :
+            // on envoie la question au controller pour afficher la correction.
+            localScores[currentIndex] = Math.max(0, localScores[currentIndex] - 1);
+            updateBars();
+            this.controller.notifyWrongAnswer(this.currentQuestion);
+          }
+          return;
+        }
+      }
+    }
+  }
+
+  isColliding(a, b) {
+    if (!a || !b) return false;
+    const ra = a.getBoundingClientRect();
+    const rb = b.getBoundingClientRect();
+    return !(
+      ra.right < rb.left ||
+      ra.left > rb.right ||
+      ra.bottom < rb.top ||
+      ra.top > rb.bottom   // ✅ correction : on vérifie bien que le missile n’est pas entièrement AU-DESSOUS
+    );
+  }
+
+  clearObjects() {
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
+    this.answers.forEach(a => a.remove());
+    this.missiles.forEach(m => m.remove());
+    this.answers = [];
+    this.missiles = [];
+  }
+
+  startAnimation() {
+    this.gameLoop();
+  }
+
+  resetAnimation() {
+    cancelAnimationFrame(this.animationFrameId);
+    this.clearObjects();
+  }
+}
+
+window.StarshipGame = StarshipGame;
 </script>
