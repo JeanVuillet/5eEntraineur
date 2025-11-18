@@ -24,21 +24,31 @@ const playersBody = $("#playersBody");
 const classFilter = $("#classFilter");
 const resetAllBtn = $("#resetAllBtn");
 const studentSearch = $("#studentSearch");
+
 let isProfessorMode = false,
   isImpersonating = false;
+
 const saved = JSON.parse(localStorage.getItem("player") || "null");
 let currentPlayerId = saved ? saved.id : null;
+
 let levels = [],
   localScores = [],
   general = 0,
   currentLevel = 0,
   currentIndex = -1,
   locked = false;
+
 let lives = 4;
 const MAX_LIVES = 4;
+
 let currentGameModuleInstance = null;
 let allPlayersData = [];
 let allQuestionsData = {};
+
+// Timer de niveau (barre verte qui se vide)
+let levelTimer = null;
+let levelTimeTotal = 90000;      // durée d'un niveau en ms (ici 90s)
+let levelTimeRemaining = 90000;  // temps restant
 
 // --- SECTION 1: Logique de connexion et de navigation ---
 function showStudent(stu) {
@@ -46,11 +56,13 @@ function showStudent(stu) {
   if ($("#welcomeText")) $("#welcomeText").textContent = `Bienvenue ${stu.firstName} !`;
   logoutBtn.style.display = "block";
 }
+
 function logout() {
   localStorage.removeItem("player");
   window.location.reload();
 }
 logoutBtn.addEventListener("click", logout);
+
 async function loadQuestions(classKey) {
   try {
     const filePath = `/questions/questions-${classKey}.json`;
@@ -64,39 +76,162 @@ async function loadQuestions(classKey) {
     levels = [];
   }
 }
+
+/**
+ * Met à jour la sélection des chapitres :
+ * - résumé niveaux/questions
+ * - état du jeu (1 Jouer / 2 Recommencer)
+ * - branche les boutons d'action pour chaque chapitre
+ */
 async function updateChapterSelectionUI(player) {
-    const classKey = getClassKey(player.classroom);
-    if (!window.allQuestionsData || Object.keys(window.allQuestionsData).length === 0) {
-        await loadAllQuestionsForProf(); 
+  const classKey = getClassKey(player.classroom);
+  if (!window.allQuestionsData || Object.keys(window.allQuestionsData).length === 0) {
+    await loadAllQuestionsForProf();
+  }
+
+  const allLevelsForClass = window.allQuestionsData[classKey] || [];
+
+  document.querySelectorAll(".chapter-box").forEach((chapterBox) => {
+    // Nettoyage ancienne UI de progression
+    const oldProgress = chapterBox.querySelector(".chapter-progress-container");
+    if (oldProgress) oldProgress.remove();
+
+    const chapterId = chapterBox.dataset.chapter;
+    const levelsInThisChapter = allLevelsForClass.filter(
+      (level) => level.chapterId === chapterId
+    );
+    if (levelsInThisChapter.length === 0) return;
+
+    const validatedLevelsInChapter = levelsInThisChapter.filter((level) =>
+      (player.validatedLevels || []).includes(level.id)
+    );
+
+    const totalQuestionsInChapter = levelsInThisChapter.reduce(
+      (acc, level) => acc + level.questions.length,
+      0
+    );
+    const validatedQuestionsInChapter = (player.validatedQuestions || []).filter(
+      (qId) => {
+        return levelsInThisChapter.some((level) => qId.startsWith(level.id));
+      }
+    ).length;
+
+    let progressHtml = "";
+    if (
+      validatedLevelsInChapter.length >= levelsInThisChapter.length &&
+      levelsInThisChapter.length > 0
+    ) {
+      progressHtml = `<div class="chapter-progress-badge" style="background-color: #f59e0b; color: white;">🏆 Chapitre terminé</div>`;
+    } else if (levelsInThisChapter[validatedLevelsInChapter.length]) {
+      const currentLevel = levelsInThisChapter[validatedLevelsInChapter.length];
+      const validatedQuestionsInLevel = (player.validatedQuestions || []).filter(
+        (qId) => qId.startsWith(currentLevel.id)
+      ).length;
+      const totalQuestionsInLevel = currentLevel.questions.length;
+      const pct =
+        totalQuestionsInLevel === 0
+          ? 0
+          : (validatedQuestionsInLevel / totalQuestionsInLevel) * 100;
+      progressHtml = `
+        <div style="font-size: 13px; color: var(--muted); margin-bottom: 4px;">
+          ${currentLevel.title}
+        </div>
+        <div class="chapter-progress-bar">
+          <div style="width: ${pct}%;"></div>
+        </div>
+        <div class="chapter-progress-text">
+          ${validatedQuestionsInLevel} / ${totalQuestionsInLevel}
+        </div>`;
     }
-    const allLevelsForClass = window.allQuestionsData[classKey] || [];
-    document.querySelectorAll('.chapter-box').forEach(chapterBox => {
-        const oldProgress = chapterBox.querySelector('.chapter-progress-container');
-        if (oldProgress) oldProgress.remove();
-        const chapterId = chapterBox.dataset.chapter;
-        const levelsInThisChapter = allLevelsForClass.filter(level => level.chapterId === chapterId);
-        if (levelsInThisChapter.length === 0) return;
-        const validatedLevelsInChapter = levelsInThisChapter.filter(level => (player.validatedLevels || []).includes(level.id));
-        const totalQuestionsInChapter = levelsInThisChapter.reduce((acc, level) => acc + level.questions.length, 0);
-        const validatedQuestionsInChapter = (player.validatedQuestions || []).filter(qId => {
-            return levelsInThisChapter.some(level => qId.startsWith(level.id));
-        }).length;
-        let progressHtml = '';
-        if (validatedLevelsInChapter.length >= levelsInThisChapter.length) {
-            progressHtml = `<div class="chapter-progress-badge" style="background-color: #f59e0b; color: white;">🏆 Terminé</div>`;
-        } else if (levelsInThisChapter[validatedLevelsInChapter.length]) {
-            const currentLevel = levelsInThisChapter[validatedLevelsInChapter.length];
-            const validatedQuestionsInLevel = (player.validatedQuestions || []).filter(qId => qId.startsWith(currentLevel.id)).length;
-            const totalQuestionsInLevel = currentLevel.questions.length;
-            progressHtml = `<div style="font-size: 13px; color: var(--muted); margin-bottom: 4px;">${currentLevel.title}</div><div class="chapter-progress-bar"><div style="width: ${(validatedQuestionsInLevel / totalQuestionsInLevel) * 100}%;"></div></div><div class="chapter-progress-text">${validatedQuestionsInLevel} / ${totalQuestionsInLevel}</div>`;
-        }
-        const summaryHtml = `<div class="chapter-summary"><div><strong>Niveaux :</strong> ${validatedLevelsInChapter.length} / ${levelsInThisChapter.length}</div><div><strong>Questions :</strong> ${validatedQuestionsInChapter} / ${totalQuestionsInChapter}</div></div>`;
-        const progressContainer = document.createElement('div');
-        progressContainer.className = 'chapter-progress-container';
-        progressContainer.innerHTML = progressHtml + summaryHtml;
-        chapterBox.appendChild(progressContainer);
-    });
+
+    const summaryHtml = `
+      <div class="chapter-summary">
+        <div><strong>Niveaux :</strong> ${validatedLevelsInChapter.length} / ${
+      levelsInThisChapter.length
+    }</div>
+        <div><strong>Questions :</strong> ${validatedQuestionsInChapter} / ${totalQuestionsInChapter}</div>
+      </div>`;
+
+    const progressContainer = document.createElement("div");
+    progressContainer.className = "chapter-progress-container";
+    progressContainer.innerHTML = progressHtml + summaryHtml;
+    chapterBox.appendChild(progressContainer);
+
+    // === Logique 1 Jouer / 2 Recommencer ===
+    const isFinished =
+      levelsInThisChapter.length > 0 &&
+      validatedLevelsInChapter.length >= levelsInThisChapter.length;
+
+    const statusEl = chapterBox.querySelector(".chapter-status-text");
+    const actionBtn = chapterBox.querySelector(".chapter-action-btn");
+
+    if (statusEl && actionBtn) {
+      const playerId = player.id || currentPlayerId;
+      const { chapter, templateId, gameClass } = chapterBox.dataset;
+      const questionsKey = getClassKey(player.classroom);
+
+      if (isFinished) {
+        // Jeu terminé → 2 Recommencer
+        statusEl.textContent = "2 Recommencer";
+        actionBtn.textContent = "2 Recommencer";
+
+        actionBtn.onclick = async (evt) => {
+          evt.stopPropagation();
+
+          const levelIds = levelsInThisChapter.map((l) => l.id);
+
+          try {
+            const res = await fetch("/api/reset-player-chapter", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                playerId,
+                levelIds,
+              }),
+            });
+
+            if (!res.ok) throw new Error("Échec de la réinitialisation du chapitre.");
+
+            // Recharger la progression de l'élève
+            let newProgress = { validatedLevels: [], validatedQuestions: [] };
+            try {
+              const progRes = await fetch(`/api/player-progress/${playerId}`);
+              if (progRes.ok) {
+                newProgress = await progRes.json();
+              }
+            } catch (e) {
+              console.error("Erreur lors du rechargement de la progression:", e);
+            }
+
+            const updatedPlayer = { ...player, ...newProgress };
+            await updateChapterSelectionUI(updatedPlayer);
+
+            // Et on relance le jeu directement
+            chapterSelection.style.display = "none";
+            game.style.display = "block";
+            await loadChapter(chapter, questionsKey, templateId, gameClass);
+          } catch (err) {
+            console.error("[FRONT] Erreur reset chapitre:", err);
+            alert("Impossible de réinitialiser ce chapitre.");
+          }
+        };
+      } else {
+        // Jeu non terminé → 1 Jouer
+        statusEl.textContent = "1 Jouer";
+        actionBtn.textContent = "1 Jouer";
+
+        actionBtn.onclick = async (evt) => {
+          evt.stopPropagation();
+          chapterSelection.style.display = "none";
+          game.style.display = "block";
+          await loadChapter(chapter, questionsKey, templateId, gameClass);
+        };
+      }
+    }
+  });
 }
+
+// --- AUTO-CONNEXION OU FORMULAIRE ---
 (async () => {
   if (saved && saved.id) {
     showStudent(saved);
@@ -113,8 +248,8 @@ async function updateChapterSelectionUI(player) {
         const progressData = await res.json();
         const fullPlayerData = { ...saved, ...progressData };
         await updateChapterSelectionUI(fullPlayerData);
-      } catch(err) {
-          console.error("Impossible de charger la progression de l'élève:", err);
+      } catch (err) {
+        console.error("Impossible de charger la progression de l'élève:", err);
       }
       chapterSelection.style.display = "block";
     }
@@ -122,6 +257,8 @@ async function updateChapterSelectionUI(player) {
     registerCard.style.display = "block";
   }
 })();
+
+// Clic global sur les box (fallback si jamais)
 chapterSelection.addEventListener("click", async (e) => {
   const chapterBox = e.target.closest(".chapter-box");
   if (chapterBox && !chapterBox.classList.contains("disabled")) {
@@ -130,16 +267,20 @@ chapterSelection.addEventListener("click", async (e) => {
     await loadChapter(chapter, questionsKey, templateId, gameClass);
   }
 });
+
 async function loadChapter(chapterId, questionsKey, templateId, gameClass) {
   chapterSelection.style.display = "none";
   game.style.display = "block";
   gameModuleContainer.innerHTML = "Chargement du chapitre...";
+
   await loadQuestions(questionsKey);
-  levels = levels.filter(level => level.chapterId === chapterId);
+  levels = levels.filter((level) => level.chapterId === chapterId);
+
   if (levels.length === 0) {
     gameModuleContainer.innerHTML = `<p class="error">Aucun niveau trouvé pour ce chapitre et cette classe.</p>`;
     return;
   }
+
   try {
     const response = await fetch(`chapitres/${chapterId}.html`);
     if (!response.ok) throw new Error(`Module ${chapterId}.html introuvable.`);
@@ -149,17 +290,30 @@ async function loadChapter(chapterId, questionsKey, templateId, gameClass) {
     const template = doc.querySelector(`#${templateId}`);
     const scriptElement = doc.querySelector("script");
     if (!template || !scriptElement) throw new Error("Fichier module malformé.");
+
     const templateContent = template.content.cloneNode(true);
     gameModuleContainer.innerHTML = "";
     gameModuleContainer.appendChild(templateContent);
+
+    // Charge le script du module
     eval(scriptElement.textContent);
+
     const controller = {
-      notifyCorrectAnswer: () => { incrementProgress(1); setTimeout(() => nextQuestion(false), 900); },
-      notifyWrongAnswer: (d) => { wrongAnswerFlow(d); },
+      notifyCorrectAnswer: () => {
+        incrementProgress(1);
+        setTimeout(() => nextQuestion(false), 900);
+      },
+      notifyWrongAnswer: (d) => {
+        wrongAnswerFlow(d);
+      },
       getState: () => ({ isLocked: locked }),
     };
+
     if (typeof window[gameClass] === "function") {
-      currentGameModuleInstance = new window[gameClass](gameModuleContainer, controller);
+      currentGameModuleInstance = new window[gameClass](
+        gameModuleContainer,
+        controller
+      );
       initQuiz();
     } else {
       throw new Error(`La classe du jeu '${gameClass}' n'a pas été trouvée.`);
@@ -169,6 +323,8 @@ async function loadChapter(chapterId, questionsKey, templateId, gameClass) {
     gameModuleContainer.innerHTML = `<p class="error">Impossible de charger le chapitre.</p>`;
   }
 }
+
+// --- Formulaire de login ---
 form?.addEventListener("submit", async (e) => {
   e.preventDefault();
   formMsg.textContent = "";
@@ -176,19 +332,25 @@ form?.addEventListener("submit", async (e) => {
   const firstName = $("#firstName").value.trim();
   const lastName = $("#lastName").value.trim();
   const classroom = $("#classroom").value;
+
   if (firstName.toLowerCase() === "jean" && lastName.toLowerCase() === "vuillet") {
     $("#profPasswordModal").style.display = "block";
     $("#profPassword").focus();
     startBtn.disabled = false;
     return;
   }
+
   if (!firstName || !lastName || !classroom) {
     formMsg.textContent = "❗ Prénom, nom et classe sont obligatoires.";
     startBtn.disabled = false;
     return;
   }
   try {
-    const res = await fetch("/api/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ firstName, lastName, classroom }) });
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ firstName, lastName, classroom }),
+    });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Erreur du serveur");
     localStorage.setItem("player", JSON.stringify(data));
@@ -199,29 +361,124 @@ form?.addEventListener("submit", async (e) => {
     startBtn.disabled = false;
   }
 });
+
 $("#validateProfPasswordBtn")?.addEventListener("click", () => {
   if ($("#profPassword").value === "Clemenceau1919") {
-    localStorage.setItem("player", JSON.stringify({ id: "prof", firstName: "Jean", lastName: "Vuillet", classroom: "Professeur" }));
+    localStorage.setItem(
+      "player",
+      JSON.stringify({
+        id: "prof",
+        firstName: "Jean",
+        lastName: "Vuillet",
+        classroom: "Professeur",
+      })
+    );
     window.location.reload();
   } else {
     $("#profPasswordMsg").textContent = "Mot de passe incorrect.";
   }
 });
+
+// --- SECTION 2: Timer & grade de niveau ---
+
+function updateTimeBar() {
+  const ratio = Math.max(0, levelTimeRemaining / levelTimeTotal);
+  mainBar.style.width = ratio * 100 + "%";
+}
+
+function startLevelTimer() {
+  stopLevelTimer();
+  levelTimeRemaining = levelTimeTotal;
+  updateTimeBar();
+
+  levelTimer = setInterval(() => {
+    levelTimeRemaining = Math.max(0, levelTimeRemaining - 100); // -0,1 s
+    updateTimeBar();
+  }, 100);
+}
+
+function stopLevelTimer() {
+  if (levelTimer) {
+    clearInterval(levelTimer);
+    levelTimer = null;
+  }
+}
+
+function showLevelGrade() {
+  const ratio = levelTimeRemaining / levelTimeTotal;
+
+  let grade = "C";
+  let cssClass = "grade-c";
+
+  if (ratio > 0.75) {
+    grade = "A+";
+    cssClass = "grade-a-plus";
+  } else if (ratio > 0.5) {
+    grade = "A";
+    cssClass = "grade-a";
+  } else if (ratio > 0.25) {
+    grade = "B";
+    cssClass = "grade-b";
+  } else {
+    grade = "C";
+    cssClass = "grade-c";
+  }
+
+  let el = document.getElementById("levelGrade");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "levelGrade";
+    el.className = "grade-badge";
+    const container =
+      document.querySelector(".quiz-container") || document.querySelector("#game .card");
+    if (container) {
+      container.appendChild(el);
+    } else {
+      document.body.appendChild(el);
+    }
+  }
+
+  el.textContent = grade;
+  el.className = "grade-badge " + cssClass;
+
+  // Apparition au centre en grand
+  el.style.opacity = "1";
+  el.style.transform = "translate(-50%, -50%) scale(1.1)";
+
+  // Petit "pop"
+  setTimeout(() => {
+    el.style.transform = "translate(-50%, -50%) scale(1.0)";
+  }, 200);
+
+  // Disparition après 2,5 s
+  setTimeout(() => {
+    el.style.opacity = "0";
+    el.style.transform = "translate(-50%, -50%) scale(0.8)";
+  }, 2500);
+}
+
+// --- SECTION 3: Logique du quiz ---
 async function initQuiz() {
   if (levels.length > 0) {
     let playerProgress = { validatedLevels: [] };
     try {
       const res = await fetch(`/api/player-progress/${currentPlayerId}`);
-      if(res.ok) playerProgress = await res.json();
-    } catch(e) { console.error("Could not fetch progress, using local data."); }
-    const validatedLevelsInThisChapter = levels.filter(level => (playerProgress.validatedLevels || []).includes(level.id));
+      if (res.ok) playerProgress = await res.json();
+    } catch (e) {
+      console.error("Could not fetch progress, using local data.");
+    }
+    const validatedLevelsInThisChapter = levels.filter((level) =>
+      (playerProgress.validatedLevels || []).includes(level.id)
+    );
     setupLevel(validatedLevelsInThisChapter.length);
   }
 }
+
 function setupLevel(idx) {
   currentLevel = idx;
-  if(!levels[currentLevel]) {
-    gameModuleContainer.innerHTML = "<h1>🎉 Félicitations, tu as terminé ce chapitre !</h1><button onclick='window.location.reload()'>Retour</button>";
+  if (!levels[currentLevel]) {
+    gameModuleContainer.innerHTML =
+      "<h1>🎉 Félicitations, tu as terminé ce chapitre !</h1><button onclick='window.location.reload()'>Retour</button>";
     return;
   }
   const lvl = levels[currentLevel];
@@ -231,66 +488,103 @@ function setupLevel(idx) {
   currentIndex = -1;
   lives = MAX_LIVES;
   renderLives();
+
+  // On (re)construit les barres
   subBarsContainer.innerHTML = "";
   lvl.questions.forEach((_, i) => {
     const bar = document.createElement("div");
     bar.className = "subProgress";
-    bar.innerHTML = `<div class="subBar" id="subBar${i}"></div><div class="subLabel">${i + 1}</div>`;
+    bar.innerHTML = `<div class="subBar" id="subBar${i}"></div><div class="subLabel">${
+      i + 1
+    }</div>`;
     bar.addEventListener("click", () => handleBarClick(i));
     subBarsContainer.appendChild(bar);
   });
+
   updateBars();
+
+  // 🔥 Démarrer le timer du niveau
+  startLevelTimer();
+
   nextQuestion(false);
 }
+
 function updateBars() {
   if (!levels[currentLevel]) return;
   const lvl = levels[currentLevel];
   const total = lvl.questions.length;
   const req = lvl.requiredPerQuestion;
-  mainBar.style.width = (general / total) * 100 + "%";
+
+  // La barre verte est gérée par le timer, ici on ne touche qu'au texte & sous-barres
   generalText.textContent = `Compteur général : ${general}/${total}`;
+
   lvl.questions.forEach((_, i) => {
     const bar = $(`#subBar${i}`);
-    if (bar) bar.style.width = (Math.min(localScores[i], req) / req) * 100 + "%";
+    if (bar) {
+      bar.style.width = (Math.min(localScores[i], req) / req) * 100 + "%";
+    }
   });
 }
+
 function findNextIndex(fromIdx) {
   const lvl = levels[currentLevel];
   const n = lvl.questions.length;
-  for (let i = fromIdx + 1; i < n; i++) if (localScores[i] < lvl.requiredPerQuestion) return i;
-  for (let i = 0; i <= fromIdx; i++) if (localScores[i] < lvl.requiredPerQuestion) return i;
+  for (let i = fromIdx + 1; i < n; i++)
+    if (localScores[i] < lvl.requiredPerQuestion) return i;
+  for (let i = 0; i <= fromIdx; i++)
+    if (localScores[i] < lvl.requiredPerQuestion) return i;
   return null;
 }
+
 async function nextQuestion(keepAnimation) {
   if (currentGameModuleInstance && !keepAnimation) {
     currentGameModuleInstance.resetAnimation();
   }
   locked = false;
   const lvl = levels[currentLevel];
+
   if (general >= lvl.questions.length) {
+    // Le niveau est fini : on arrête le timer et on affiche la note
+    stopLevelTimer();
+    showLevelGrade();
+
     await saveProgress("level", lvl.id);
+
     if (currentLevel < levels.length - 1) {
-      setupLevel(currentLevel + 1);
+      // On attend que la lettre soit bien visible
+      setTimeout(() => {
+        setupLevel(currentLevel + 1);
+      }, 2600);
     } else {
-      gameModuleContainer.innerHTML = "<h1>🎉 Félicitations, tu as terminé ce chapitre !</h1><button onclick='window.location.reload()'>Retour</button>";
+      // Fin du chapitre
+      setTimeout(() => {
+        gameModuleContainer.innerHTML =
+          "<h1>🎉 Félicitations, tu as terminé ce chapitre !</h1><button onclick='window.location.reload()'>Retour</button>";
+      }, 2600);
     }
     return;
   }
+
   currentIndex = findNextIndex(currentIndex);
   renderQuestion();
   if (currentGameModuleInstance) {
     currentGameModuleInstance.startAnimation();
   }
 }
+
 function renderQuestion() {
   if (currentIndex === null) return;
   const questionData = levels[currentLevel].questions[currentIndex];
-  if (currentGameModuleInstance && typeof currentGameModuleInstance.loadQuestion === "function") {
+  if (
+    currentGameModuleInstance &&
+    typeof currentGameModuleInstance.loadQuestion === "function"
+  ) {
     currentGameModuleInstance.loadQuestion(questionData);
   } else {
     console.error("Le module de jeu actuel n'a pas de méthode 'loadQuestion' !");
   }
 }
+
 function wrongAnswerFlow(q) {
   if (currentGameModuleInstance) currentGameModuleInstance.resetAnimation();
   decreaseLives();
@@ -304,10 +598,12 @@ function wrongAnswerFlow(q) {
     }
   }
 }
+
 closeCorrectionBtn.addEventListener("click", () => {
   correctionOverlay.style.display = "none";
   nextQuestion(true);
 });
+
 function incrementProgress(v) {
   const lvl = levels[currentLevel];
   const req = lvl.requiredPerQuestion;
@@ -319,6 +615,7 @@ function incrementProgress(v) {
   }
   updateBars();
 }
+
 function renderLives() {
   livesWrap.innerHTML = "";
   for (let i = 0; i < MAX_LIVES; i++) {
@@ -327,6 +624,7 @@ function renderLives() {
     livesWrap.appendChild(h);
   }
 }
+
 function decreaseLives() {
   lives = Math.max(0, lives - 1);
   renderLives();
@@ -335,16 +633,22 @@ function decreaseLives() {
     overlay.style.display = "flex";
   }
 }
+
 restartBtn.addEventListener("click", () => {
   overlay.style.display = "none";
   setupLevel(currentLevel);
 });
+
+// --- SECTION 4: Tableau de bord prof ---
 async function fetchPlayers() {
   if (!profDashboard) return;
   profDashboard.style.display = "block";
+
   const table = $("#playersTable");
-  table.querySelectorAll('tbody').forEach(tbody => tbody.remove());
-  const loadingTbody = document.createElement('tbody');
+  table
+    .querySelectorAll("tbody")
+    .forEach((tbody) => tbody.remove());
+  const loadingTbody = document.createElement("tbody");
   loadingTbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Chargement...</td></tr>`;
   table.appendChild(loadingTbody);
   try {
@@ -354,112 +658,193 @@ async function fetchPlayers() {
     applyFiltersAndRender();
   } catch (error) {
     const table = $("#playersTable");
-    table.querySelectorAll('tbody').forEach(tbody => tbody.remove());
-    const errorTbody = document.createElement('tbody');
+    table
+      .querySelectorAll("tbody")
+      .forEach((tbody) => tbody.remove());
+    const errorTbody = document.createElement("tbody");
     errorTbody.innerHTML = `<tr><td colspan="6" style="color: var(--warn);">❌ Impossible de charger : ${error.message}</td></tr>`;
     table.appendChild(errorTbody);
   }
 }
+
 function generateLevelProgressHtml(level, validatedQuestions) {
-  if (!level) return 'N/A';
+  if (!level) return "N/A";
   const totalQuestions = level.questions.length;
   let html = `<div class="questions-list" style="display: flex; gap: 4px; flex-wrap: wrap;">`;
   for (let i = 0; i < totalQuestions; i++) {
     const qId = `${level.id}-${i}`;
     const isValid = validatedQuestions.includes(qId);
     const indicatorClass = isValid ? "question-valid" : "question-invalid";
-    html += `<div class="question-indicator ${indicatorClass}" title="Question ${i + 1}">${i + 1}</div>`;
+    html += `<div class="question-indicator ${indicatorClass}" title="Question ${
+      i + 1
+    }">${i + 1}</div>`;
   }
   html += `</div>`;
   return html;
 }
+
 function renderPlayers(playersToRender) {
   const table = $("#playersTable");
-  table.querySelectorAll('tbody').forEach(tbody => tbody.remove());
+  table
+    .querySelectorAll("tbody")
+    .forEach((tbody) => tbody.remove());
   if (playersToRender.length === 0) {
-    const tbody = document.createElement('tbody');
+    const tbody = document.createElement("tbody");
     tbody.innerHTML = `<tr><td colspan="6">Aucun élève trouvé.</td></tr>`;
     table.appendChild(tbody);
     return;
   }
-  const chaptersToDisplay = { "ch1-zombie": "Chapitre 1 : Zombies", "ch2-starship": "Chapitre 2 : Starship" };
-  playersToRender.sort((a, b) => a.lastName.localeCompare(b.lastName)).forEach(player => {
-    const playerTbody = document.createElement('tbody');
-    playerTbody.style.borderTop = '1px solid #e2e8f0';
-    const classKey = getClassKey(player.classroom);
-    const allLevelsForClass = (window.allQuestionsData && window.allQuestionsData[classKey]) || [];
-    const validatedLevels = player.validatedLevels || [];
-    const validatedQuestions = player.validatedQuestions || [];
-    let chapterRowsHtml = '';
-    let isFirstRow = true;
-    for (const chapterId in chaptersToDisplay) {
-      const chapterLabel = chaptersToDisplay[chapterId];
-      const levelsInThisChapter = allLevelsForClass.filter(level => level.chapterId === chapterId);
-      let progressHtml = '';
-      let levelTitleHtml = '';
-      if (levelsInThisChapter.length === 0) {
-        progressHtml = '<em>(Non applicable)</em>';
-        levelTitleHtml = '-';
-      } else {
-        const currentLevelForChapter = levelsInThisChapter.find(level => !validatedLevels.includes(level.id));
-        if (currentLevelForChapter) {
-          levelTitleHtml = currentLevelForChapter.title;
-          progressHtml = generateLevelProgressHtml(currentLevelForChapter, validatedQuestions);
+  const chaptersToDisplay = {
+    "ch1-zombie": "Chapitre 1 : Zombies",
+    "ch2-starship": "Chapitre 2 : Starship",
+  };
+
+  playersToRender
+    .sort((a, b) => a.lastName.localeCompare(b.lastName))
+    .forEach((player) => {
+      const playerTbody = document.createElement("tbody");
+      playerTbody.style.borderTop = "1px solid #e2e8f0";
+
+      const classKey = getClassKey(player.classroom);
+      const allLevelsForClass =
+        (window.allQuestionsData && window.allQuestionsData[classKey]) || [];
+      const validatedLevels = player.validatedLevels || [];
+      const validatedQuestions = player.validatedQuestions || [];
+
+      let chapterRowsHtml = "";
+      let isFirstRow = true;
+
+      for (const chapterId in chaptersToDisplay) {
+        const chapterLabel = chaptersToDisplay[chapterId];
+        const levelsInThisChapter = allLevelsForClass.filter(
+          (level) => level.chapterId === chapterId
+        );
+
+        let progressHtml = "";
+        let levelTitleHtml = "";
+        if (levelsInThisChapter.length === 0) {
+          progressHtml = "<em>(Non applicable)</em>";
+          levelTitleHtml = "-";
         } else {
-          levelTitleHtml = 'Terminé';
-          progressHtml = '<span class="finished-badge">🏆</span>';
+          const currentLevelForChapter = levelsInThisChapter.find(
+            (level) => !validatedLevels.includes(level.id)
+          );
+          if (currentLevelForChapter) {
+            levelTitleHtml = currentLevelForChapter.title;
+            progressHtml = generateLevelProgressHtml(
+              currentLevelForChapter,
+              validatedQuestions
+            );
+          } else {
+            levelTitleHtml = "Terminé";
+            progressHtml = '<span class="finished-badge">🏆</span>';
+          }
+        }
+
+        if (isFirstRow) {
+          chapterRowsHtml += `<tr>
+            <td rowspan="${
+              Object.keys(chaptersToDisplay).length
+            }" style="vertical-align: middle; padding-left: 10px;">
+              <strong>${player.firstName} ${player.lastName}</strong>
+            </td>
+            <td rowspan="${
+              Object.keys(chaptersToDisplay).length
+            }" style="vertical-align: middle;">
+              ${player.classroom}
+            </td>
+            <td>${chapterLabel}</td>
+            <td>${levelTitleHtml}</td>
+            <td>${progressHtml}</td>
+            <td rowspan="${
+              Object.keys(chaptersToDisplay).length
+            }" style="vertical-align: middle;">
+              <button class="action-btn reset-btn" data-player-id="${
+                player._id
+              }" data-player-name="${player.firstName} ${
+            player.lastName
+          }">Réinitialiser</button>
+            </td>
+          </tr>`;
+          isFirstRow = false;
+        } else {
+          chapterRowsHtml += `<tr>
+            <td>${chapterLabel}</td>
+            <td>${levelTitleHtml}</td>
+            <td>${progressHtml}</td>
+          </tr>`;
         }
       }
-      if (isFirstRow) {
-        chapterRowsHtml += `<tr><td rowspan="${Object.keys(chaptersToDisplay).length}" style="vertical-align: middle; padding-left: 10px;"><strong>${player.firstName} ${player.lastName}</strong></td><td rowspan="${Object.keys(chaptersToDisplay).length}" style="vertical-align: middle;">${player.classroom}</td><td>${chapterLabel}</td><td>${levelTitleHtml}</td><td>${progressHtml}</td><td rowspan="${Object.keys(chaptersToDisplay).length}" style="vertical-align: middle;"><button class="action-btn reset-btn" data-player-id="${player._id}" data-player-name="${player.firstName} ${player.lastName}">Réinitialiser</button></td></tr>`;
-        isFirstRow = false;
-      } else {
-        chapterRowsHtml += `<tr><td>${chapterLabel}</td><td>${levelTitleHtml}</td><td>${progressHtml}</td></tr>`;
-      }
-    }
-    playerTbody.innerHTML = chapterRowsHtml;
-    table.appendChild(playerTbody);
-  });
+
+      playerTbody.innerHTML = chapterRowsHtml;
+      table.appendChild(playerTbody);
+    });
 }
+
 async function loadAllQuestionsForProf() {
   const keys = ["5e", "6e", "2de"];
   try {
-    const responses = await Promise.all(keys.map(key => fetch(`/questions/questions-${key}.json`)));
-    const jsonData = await Promise.all(responses.map(res => res.json()));
-    keys.forEach((key, index) => { allQuestionsData[key] = jsonData[index]; });
+    const responses = await Promise.all(
+      keys.map((key) => fetch(`/questions/questions-${key}.json`))
+    );
+    const jsonData = await Promise.all(responses.map((res) => res.json()));
+    keys.forEach((key, index) => {
+      allQuestionsData[key] = jsonData[index];
+    });
     window.allQuestionsData = allQuestionsData;
-  } catch (err) { console.error("Impossible de pré-charger les questions.", err); }
+  } catch (err) {
+    console.error("Impossible de pré-charger les questions.", err);
+  }
 }
+
 function applyFiltersAndRender() {
   let filtered = [...allPlayersData];
   const selectedClass = classFilter ? classFilter.value : "all";
-  const searchTerm = studentSearch ? studentSearch.value.trim().toLowerCase() : "";
+  const searchTerm = studentSearch
+    ? studentSearch.value.trim().toLowerCase()
+    : "";
+
   if (selectedClass !== "all") {
     filtered = filtered.filter((p) => p.classroom === selectedClass);
   }
   if (searchTerm) {
-    filtered = filtered.filter((p) => `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchTerm));
+    filtered = filtered.filter((p) =>
+      `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchTerm)
+    );
   }
   renderPlayers(filtered);
 }
+
 classFilter?.addEventListener("change", applyFiltersAndRender);
 studentSearch?.addEventListener("input", applyFiltersAndRender);
+
 resetAllBtn?.addEventListener("click", async () => {
-  if (confirm("⚠️ ATTENTION ! ⚠️\nRéinitialiser TOUS les élèves ?")) {
+  if (
+    confirm(
+      "⚠️ ATTENTION ! ⚠️\nRéinitialiser TOUS les élèves ? (tous chapitres, toutes questions)"
+    )
+  ) {
     await fetch("/api/reset-all-players", { method: "POST" });
     fetchPlayers();
   }
 });
+
 playersBody?.addEventListener("click", async (e) => {
   const target = e.target;
   if (target.matches(".reset-btn")) {
     const { playerId, playerName } = target.dataset;
     if (confirm(`Réinitialiser la progression de ${playerName} ?`)) {
-      await fetch("/api/reset-player", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ playerId }) });
+      await fetch("/api/reset-player", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerId }),
+      });
       fetchPlayers();
     }
   }
 });
+
+// --- SECTION 5: Utilitaires & sauvegarde ---
 function getClassKey(classroom) {
   if (!classroom) return null;
   const cls = classroom.toUpperCase();
@@ -468,7 +853,9 @@ function getClassKey(classroom) {
   if (cls.startsWith("2")) return "2de";
   return null;
 }
-let isRKeyDown = false, isTKeyDown = false;
+
+let isRKeyDown = false,
+  isTKeyDown = false;
 document.addEventListener("keydown", (e) => {
   if (e.key.toLowerCase() === "r") isRKeyDown = true;
   if (e.key.toLowerCase() === "t") isTKeyDown = true;
@@ -477,6 +864,7 @@ document.addEventListener("keyup", (e) => {
   if (e.key.toLowerCase() === "r") isRKeyDown = false;
   if (e.key.toLowerCase() === "t") isTKeyDown = false;
 });
+
 async function handleBarClick(questionIndex) {
   if (locked || !(isRKeyDown && isTKeyDown)) return;
   locked = true;
@@ -504,6 +892,7 @@ async function handleBarClick(questionIndex) {
   }
   locked = false;
 }
+
 async function saveProgress(progressType, value) {
   if (!currentPlayerId || currentPlayerId === "prof") return false;
   try {
@@ -520,6 +909,3 @@ async function saveProgress(progressType, value) {
     return false;
   }
 }
-//voila env a mettre a la racine 
-//MONGODB_URI="mongodb+srv://vuilletjean:Clemenceau1919@cluster0.ilgdlcy.mongodb.net/quizDB?retryWrites=true&w=majority&appName=Cluster0"
-//PORT=3000

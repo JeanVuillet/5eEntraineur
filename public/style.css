@@ -462,3 +462,48 @@ button {
     gap: 16px;
   }
 }
+/* --- NOTE DE FIN DE NIVEAU (A+ / A / B / C) --- */
+
+.quiz-container {
+  position: relative; /* pour positionner la pastille dedans */
+}
+
+.quiz-container {
+  position: relative;
+}
+
+/* Grosse lettre au milieu du jeu */
+.grade-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  padding: 24px 48px;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 64px;
+  letter-spacing: 0.08em;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 50;
+}
+
+
+.grade-a-plus {
+  background: #14532d; /* vert très foncé */
+}
+
+.grade-a {
+  background: #16a34a; /* vert clair */
+}
+
+.grade-b {
+  background: #facc15; /* jaune */
+  color: #713f12;
+}
+
+.grade-c {
+  background: #ef4444; /* rouge */
+}

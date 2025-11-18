@@ -18,8 +18,52 @@
     <!-- Carte d'inscription -->
     <section id="registerCard" class="card">
       <h2>👋 Avant de commencer</h2>
-      <form id="registerForm" class="form" autocomplete="on"><p class="hint">Entre ton <strong>prénom</strong>, <strong>nom</strong> et sélectionne ta <strong>classe</strong>.</p><div class="row"><div><label for="firstName">Prénom</label><input id="firstName" name="firstName" placeholder="Ex : Jeanne" required /></div><div><label for="lastName">Nom</label><input id="lastName" name="lastName" placeholder="Ex : Martin" required /></div></div><div class="row"><div><label for="classroom">Classe</label><select id="classroom" name="classroom"><option value="" disabled selected>Choisis ta classe...</option><option value="6D">6eD</option><option value="5B">5eB</option><option value="5C">5eC</option><option value="2A">2de A</option><option value="2CD">2de CD</option></select></div><div><label>&nbsp;</label><button id="startBtn" type="submit">Commencer</button></div></div><div id="formMsg" class="hint"></div></form>
-      <div id="profPasswordModal" style="display: none;"><h4 style="margin-top:0;">🔐 Accès Professeur</h4><p class="hint">Veuillez entrer le mot de passe.</p><div class="form"><div><label for="profPassword">Mot de passe</label><input type="password" id="profPassword" placeholder="••••••••••" /></div><div id="profPasswordMsg" class="error" style="margin-bottom: 8px;"></div><button id="validateProfPasswordBtn">Valider</button></div></div>
+      <form id="registerForm" class="form" autocomplete="on">
+        <p class="hint">
+          Entre ton <strong>prénom</strong>, <strong>nom</strong> et sélectionne ta <strong>classe</strong>.
+        </p>
+        <div class="row">
+          <div>
+            <label for="firstName">Prénom</label>
+            <input id="firstName" name="firstName" placeholder="Ex : Jeanne" required />
+          </div>
+          <div>
+            <label for="lastName">Nom</label>
+            <input id="lastName" name="lastName" placeholder="Ex : Martin" required />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="classroom">Classe</label>
+            <select id="classroom" name="classroom">
+              <option value="" disabled selected>Choisis ta classe...</option>
+              <option value="6D">6eD</option>
+              <option value="5B">5eB</option>
+              <option value="5C">5eC</option>
+              <option value="2A">2de A</option>
+              <option value="2CD">2de CD</option>
+            </select>
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button id="startBtn" type="submit">Commencer</button>
+          </div>
+        </div>
+        <div id="formMsg" class="hint"></div>
+      </form>
+
+      <div id="profPasswordModal" style="display: none;">
+        <h4 style="margin-top:0;">🔐 Accès Professeur</h4>
+        <p class="hint">Veuillez entrer le mot de passe.</p>
+        <div class="form">
+          <div>
+            <label for="profPassword">Mot de passe</label>
+            <input type="password" id="profPassword" placeholder="••••••••••" />
+          </div>
+          <div id="profPasswordMsg" class="error" style="margin-bottom: 8px;"></div>
+          <button id="validateProfPasswordBtn">Valider</button>
+        </div>
+      </div>
     </section>
 
     <!-- Écran de sélection des chapitres -->
@@ -47,10 +91,12 @@
             </ul>
           </div>
 
-          <p class="chapter-status-text">🏆 <strong>Terminé</strong></p>
+          <!-- Texte d’état dynamique : 1 Jouer ou 2 Recommencer -->
+          <p class="chapter-status-text"></p>
 
-          <button class="replay-btn">
-            🔁 Refaire le jeu
+          <!-- Bouton d’action dynamique -->
+          <button class="replay-btn chapter-action-btn">
+            1 Jouer
           </button>
         </div>
 
@@ -75,12 +121,12 @@
             </ul>
           </div>
 
-          <p class="chapter-status-text">
-            🚀 <strong>Commencer / Reprendre</strong>
-          </p>
+          <!-- Texte d’état dynamique -->
+          <p class="chapter-status-text"></p>
 
-          <button class="replay-btn-improved">
-            🚀 Commencer / Reprendre
+          <!-- Bouton d’action dynamique -->
+          <button class="replay-btn-improved chapter-action-btn">
+            1 Jouer
           </button>
         </div>
       </div>
@@ -104,7 +150,14 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
         <h2>📈 Tableau des élèves</h2>
         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-          <select id="classFilter" class="action-btn" style="width: auto; font-size: 14px; padding: 8px 12px!important; height: 37px; border-color: #d1d5db;"><option value="all">Toutes les classes</option><option value="6D">6eD</option><option value="5B">5eB</option><option value="5C">5eC</option><option value="2A">2de A</option><option value="2CD">2de CD</option></select>
+          <select id="classFilter" class="action-btn" style="width: auto; font-size: 14px; padding: 8px 12px!important; height: 37px; border-color: #d1d5db;">
+            <option value="all">Toutes les classes</option>
+            <option value="6D">6eD</option>
+            <option value="5B">5eB</option>
+            <option value="5C">5eC</option>
+            <option value="2A">2de A</option>
+            <option value="2CD">2de CD</option>
+          </select>
           <input id="studentSearch" type="text" placeholder="Rechercher un élève..." class="action-btn" style="width: 220px; font-size: 14px; padding: 8px 12px!important; height: 37px; border-color: #d1d5db;"/>
           <button id="resetAllBtn" style="width: auto; padding: 8px 12px; font-size: 14px; background: var(--warn);">⚠️ Tout Réinitialiser</button>
         </div>
@@ -124,8 +177,23 @@
       </table>
     </section>
   </main>
-  <div id="overlay" style="display:none;"><div class="panel"><h3>💀 Game Over</h3><p>Tu n'as plus de cœurs. Recommencer le niveau ?</p><button id="restartBtn">Recommencer</button></div></div>
-  <div id="correctionOverlay" style="display:none;"><div class="correction-box"><h2>❌ Erreur ! La bonne réponse était :</h2><p id="correctionText"></p><button id="closeCorrectionBtn">Continuer</button></div></div>
+
+  <div id="overlay" style="display:none;">
+    <div class="panel">
+      <h3>💀 Game Over</h3>
+      <p>Tu n'as plus de cœurs. Recommencer le niveau ?</p>
+      <button id="restartBtn">Recommencer</button>
+    </div>
+  </div>
+
+  <div id="correctionOverlay" style="display:none;">
+    <div class="correction-box">
+      <h2>❌ Erreur ! La bonne réponse était :</h2>
+      <p id="correctionText"></p>
+      <button id="closeCorrectionBtn">Continuer</button>
+    </div>
+  </div>
+
   <script src="main.js"></script>
 </body>
 </html>
